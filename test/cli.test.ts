@@ -144,4 +144,136 @@ describe("cli", () => {
       main(["generate", "--manifest", manifestPath, "--apks", apks, "--out", join(dir, "site")]),
     ).rejects.toThrow(/sha256 mismatch/);
   });
+
+  it("drops hidden versions from the page and from the copied feed files", async () => {
+    const dir = await tempDir();
+    const apks = join(dir, "apks");
+    const out = join(dir, "site");
+    await mkdir(apks, { recursive: true });
+    const now = new Date().toISOString();
+
+    const specs = [
+      { version: "1.0.3-r1", bytes: Buffer.from("taskd 1.0.3") },
+      { version: "1.0.2-r1", bytes: Buffer.from("taskd 1.0.2") },
+    ];
+    const entries = specs.map(({ version, bytes }) => {
+      return {
+        status: "ok",
+        name: "taskd",
+        version,
+        arch: "all",
+        description: "Task scheduler daemon",
+        depends: ["procd"],
+        license: "MIT",
+        installedSize: bytes.length,
+        fileSize: bytes.length,
+        sha256: createHash("sha256").update(bytes).digest("hex"),
+        sourceRepo: "kiddin9/op-packages",
+        sourceCommit: "18b7d51c1a06427fa6e8c64b161869de7daded7e",
+        sourcePath: "taskd",
+        asset: `taskd-${version}.apk`,
+        publishedAt: now,
+      };
+    });
+    for (const spec of specs) {
+      await writeFile(join(apks, `taskd-${spec.version}.apk`), spec.bytes);
+    }
+
+    const manifestPath = join(dir, "manifest.json");
+    await writeFile(
+      manifestPath,
+      JSON.stringify({
+        schemaVersion: 1,
+        generatedAt: now,
+        baseVersion: "25.12.2",
+        arch: "x86_64",
+        buildRunId: 1,
+        entries,
+      }),
+    );
+    const hidePath = join(dir, "hide.json");
+    await writeFile(
+      hidePath,
+      JSON.stringify({
+        hidden: [
+          { name: "taskd", version: "1.0.3-r1", reason: "test", hiddenAt: now },
+        ],
+      }),
+    );
+
+    expect(
+      await main([
+        "generate",
+        "--manifest",
+        manifestPath,
+        "--apks",
+        apks,
+        "--out",
+        out,
+        "--hide",
+        hidePath,
+      ]),
+    ).toBe(0);
+
+    expect(await readFile(join(out, "x86_64", "taskd-1.0.2-r1.apk"), "utf8")).toBe("taskd 1.0.2");
+    await expect(readFile(join(out, "x86_64", "taskd-1.0.3-r1.apk"))).rejects.toThrow();
+    const html = await readFile(join(out, "packages", "taskd.html"), "utf8");
+    expect(html).toContain("1.0.2-r1");
+    expect(html).not.toContain("1.0.3-r1");
+  });
+
+  it("keeps only the latest two versions inside the retention window", async () => {
+    const dir = await tempDir();
+    const apks = join(dir, "apks");
+    const out = join(dir, "site");
+    await mkdir(apks, { recursive: true });
+    const now = new Date().toISOString();
+
+    const versions = ["1.0.3-r1", "1.0.2-r1", "1.0.1-r1"];
+    const entries = versions.map((version) => {
+      const bytes = Buffer.from(`taskd ${version}`);
+      return {
+        status: "ok",
+        name: "taskd",
+        version,
+        arch: "all",
+        description: "Task scheduler daemon",
+        depends: [],
+        license: "MIT",
+        installedSize: bytes.length,
+        fileSize: bytes.length,
+        sha256: createHash("sha256").update(bytes).digest("hex"),
+        sourceRepo: "kiddin9/op-packages",
+        sourceCommit: "18b7d51c1a06427fa6e8c64b161869de7daded7e",
+        sourcePath: "taskd",
+        asset: `taskd-${version}.apk`,
+        publishedAt:
+          version === "1.0.1-r1" ? new Date(Date.now() - 40 * 86_400_000).toISOString() : now,
+      };
+    });
+    for (const entry of entries) {
+      await writeFile(join(apks, entry.asset), Buffer.from(`taskd ${entry.version}`));
+    }
+
+    const manifestPath = join(dir, "manifest.json");
+    await writeFile(
+      manifestPath,
+      JSON.stringify({
+        schemaVersion: 1,
+        generatedAt: now,
+        baseVersion: "25.12.2",
+        arch: "x86_64",
+        buildRunId: 1,
+        entries,
+      }),
+    );
+
+    expect(
+      await main(["generate", "--manifest", manifestPath, "--apks", apks, "--out", out]),
+    ).toBe(0);
+
+    expect(await readFile(join(out, "x86_64", "taskd-1.0.3-r1.apk"), "utf8")).toBe("taskd 1.0.3-r1");
+    expect(await readFile(join(out, "x86_64", "taskd-1.0.2-r1.apk"), "utf8")).toBe("taskd 1.0.2-r1");
+    await expect(readFile(join(out, "x86_64", "taskd-1.0.1-r1.apk"))).rejects.toThrow();
+  });
 });
