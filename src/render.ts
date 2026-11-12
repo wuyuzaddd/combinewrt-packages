@@ -76,9 +76,14 @@ const FILTER_SCRIPT = `
       const name = (card.dataset.name || "").toLowerCase();
       const description = (card.dataset.description || "").toLowerCase();
       const text = name + " " + description;
+      const licenseOk =
+        license.value === "" ||
+        (license.value === "__none"
+          ? (card.dataset.license || "") === ""
+          : card.dataset.license === license.value);
       const ok =
         (term === "" || text.includes(term)) &&
-        (license.value === "" || card.dataset.license === license.value) &&
+        licenseOk &&
         (source.value === "" || card.dataset.source === source.value);
       card.hidden = !ok;
       if (ok) shown += 1;
@@ -153,6 +158,7 @@ export function renderIndex(catalog: Catalog, feedUrl: string): string {
     )
     .join("\n");
 
+  const hasUnlicensed = catalog.packages.some((entry) => !entry.license);
   const body = `<section class="hero">
   <h1>CombineWRT 软件包</h1>
   <p class="muted">为 ImmortalWrt ${escapeHtml(catalog.baseVersion)}（${escapeHtml(
@@ -171,7 +177,7 @@ export function renderIndex(catalog: Catalog, feedUrl: string): string {
   <input id="q" type="search" placeholder="搜索软件包名称或描述" autocomplete="off" />
   <select id="license" aria-label="按许可证筛选"><option value="">全部许可证</option>${licenses
     .map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`)
-    .join("")}</select>
+    .join("")}${hasUnlicensed ? '<option value="__none">未声明许可</option>' : ""}</select>
   <select id="source" aria-label="按来源筛选"><option value="">全部来源</option>${sources
     .map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`)
     .join("")}</select>

@@ -51,6 +51,19 @@ describe("renderSite", () => {
     expect(html).toContain("https://wuyuzaddd.github.io/combinewrt-packages/x86_64/packages.adb");
   });
 
+  it("offers a filter for packages without a declared license", () => {
+    const catalog = fixtureCatalog();
+    const modified: Catalog = {
+      ...catalog,
+      packages: catalog.packages.map((entry, index) =>
+        index === 0 ? { ...entry, license: "" } : entry,
+      ),
+    };
+    const html = renderSite(modified).get("index.html") as string;
+    expect(html).toContain('<option value="__none">未声明许可</option>');
+    expect(html).toContain('data-license=""');
+  });
+
   it("renders an install page that points at the index, not a directory", () => {
     const html = renderSite(fixtureCatalog()).get("install.html") as string;
     expect(html).toContain("/x86_64/packages.adb");
