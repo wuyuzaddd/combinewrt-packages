@@ -145,6 +145,13 @@ jobs:
             --index site/x86_64/packages.adb \
             --apk-tool "$APK_TOOL"
 
+      - name: Write public audit record
+        run: |
+          node scripts/write-audit.mjs \
+            --site site \
+            --manifest artifact/manifest.json \
+            --hide hide.json
+
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site
