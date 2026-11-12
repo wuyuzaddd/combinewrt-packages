@@ -19,12 +19,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Assemble placeholder site
-        run: |
-          set -euo pipefail
-          mkdir -p site
-          cp public/index.html site/index.html
-          touch site/.nojekyll
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Render fixture site
+        run: npm run fixture -- --out site
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site
