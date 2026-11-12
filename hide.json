@@ -1,10 +1,3 @@
 {
-  "hidden": [
-    {
-      "name": "taskd",
-      "version": "1.0.3-r1",
-      "reason": "ticket 09 live verification",
-      "hiddenAt": "2026-11-12T05:55:00Z"
-    }
-  ]
+  "hidden": []
 }
