@@ -113,7 +113,7 @@ jobs:
           mkdir -p /tmp/apk-tools
           tar -xzf /tmp/apk-tools-static.apk --ignore-zeros -C /tmp/apk-tools
           echo "APK_TOOL=/tmp/apk-tools/sbin/apk.static" >> "$GITHUB_ENV"
-          /tmp/apk-tools/sbin/apk.static version
+          /tmp/apk-tools/sbin/apk.static --version
 
       - name: Sign index and add feed key
         env:
