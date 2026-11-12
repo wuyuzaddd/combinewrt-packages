@@ -1,9 +1,17 @@
-name: pages
+name: pages-fixture-preview
+
+# Fixture preview only. Production deployments go through publish.yml after a
+# successful combinewrt-build "packages" run. This workflow deliberately has no
+# push trigger so a merge can never overwrite the live signed feed with fixture
+# data.
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "preview" to deploy fixture data over the live site'
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -16,6 +24,7 @@ concurrency:
 
 jobs:
   build:
+    if: inputs.confirm == 'preview'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

@@ -1,0 +1,74 @@
+name: feed-client-test
+
+# Real apk 3.0.9 client test against a throwaway-signed copy of a build
+# artifact: installs all six packages in a throwaway ImmortalWrt 25.12.2
+# rootfs, then proves a tampered index, a rogue-signed index and a tampered
+# apk are all rejected. Uses no production signing key.
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_run_id:
+        description: combinewrt-build "packages" run id (empty = latest successful)
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: feed-client-test
+  cancel-in-progress: false
+
+jobs:
+  install:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      GH_TOKEN: ${{ secrets.PACKAGES_TOKEN }}
+      INPUT_RUN_ID: ${{ inputs.build_run_id }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Resolve build run
+        run: |
+          set -euo pipefail
+          run_id="$INPUT_RUN_ID"
+          if [ -z "$run_id" ]; then
+            run_id="$(gh run list --repo wuyuzaddd/combinewrt-build \
+              --workflow packages --status success --limit 1 \
+              --json databaseId --jq '.[0].databaseId // empty')"
+          fi
+          case "$run_id" in
+            ''|*[!0-9]*) echo "no usable build run id" >&2; exit 1 ;;
+          esac
+          echo "BUILD_RUN_ID=$run_id" >> "$GITHUB_ENV"
+          gh run view "$run_id" --repo wuyuzaddd/combinewrt-build \
+            --json workflowName,status,conclusion,headBranch
+
+      - name: Download build artifact
+        run: |
+          set -euo pipefail
+          rm -rf artifact
+          gh run download "$BUILD_RUN_ID" --repo wuyuzaddd/combinewrt-build \
+            --name packages-build --dir artifact
+          test -f artifact/manifest.json
+
+      - name: Generate site from artifact
+        run: |
+          rm -rf site
+          npm run generate -- \
+            --manifest artifact/manifest.json \
+            --apks artifact/apks \
+            --out site \
+            --hide hide.json
+
+      - name: Run real client install and tamper tests
+        run: bash scripts/feed-client-test.sh --site site

@@ -1,0 +1,160 @@
+name: publish
+
+# Publishes a signed apk feed for a successful combinewrt-build "packages" run.
+# Triggered by repository_dispatch (client_payload.build_run_id) or manually
+# with a run id. The previous Pages deployment stays live unless this workflow
+# reaches the deploy job.
+
+on:
+  repository_dispatch:
+    types: [packages-built]
+  workflow_dispatch:
+    inputs:
+      build_run_id:
+        description: combinewrt-build "packages" workflow run id
+        required: true
+        type: string
+      allow_partial:
+        description: Publish even if a selected package failed to build
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      BUILD_RUN_ID: ${{ github.event.inputs.build_run_id || github.event.client_payload.build_run_id }}
+      ALLOW_PARTIAL: ${{ github.event.inputs.allow_partial || 'false' }}
+      GH_TOKEN: ${{ secrets.PACKAGES_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate build run
+        run: |
+          set -euo pipefail
+          case "$BUILD_RUN_ID" in
+            ''|*[!0-9]*) echo "invalid build_run_id: '$BUILD_RUN_ID'" >&2; exit 1 ;;
+          esac
+          run_json="$(gh run view "$BUILD_RUN_ID" --repo wuyuzaddd/combinewrt-build \
+            --json workflowName,status,conclusion,headBranch)"
+          echo "$run_json"
+          node -e '
+            const run = JSON.parse(process.argv[1]);
+            if (run.workflowName !== "packages") throw new Error("not a packages workflow run");
+            if (run.status !== "completed" || run.conclusion !== "success") {
+              throw new Error("build run is not successful: " + run.status + "/" + run.conclusion);
+            }
+          ' "$run_json"
+
+      - name: Download build artifact
+        run: |
+          set -euo pipefail
+          rm -rf artifact
+          gh run download "$BUILD_RUN_ID" --repo wuyuzaddd/combinewrt-build \
+            --name packages-build --dir artifact
+          test -f artifact/manifest.json
+          ls -l artifact artifact/apks | head -30
+
+      - name: Check manifest for failed packages
+        run: |
+          node - <<'NODE'
+          const fs = require("node:fs");
+          const manifest = JSON.parse(fs.readFileSync("artifact/manifest.json", "utf8"));
+          if (manifest.buildRunId !== Number(process.env.BUILD_RUN_ID)) {
+            throw new Error(`manifest buildRunId ${manifest.buildRunId} != ${process.env.BUILD_RUN_ID}`);
+          }
+          if (!Array.isArray(manifest.entries) || manifest.entries.length === 0) {
+            throw new Error("manifest has no entries");
+          }
+          const failed = manifest.entries.filter((entry) => entry.status !== "ok");
+          if (failed.length > 0) {
+            const names = failed.map((entry) => entry.name).join(", ");
+            if (process.env.ALLOW_PARTIAL !== "true") {
+              console.error(`refusing to publish: failed packages: ${names}`);
+              process.exit(1);
+            }
+            console.warn(`publishing partial feed, failed packages: ${names}`);
+          }
+          console.log(`manifest ok: ${manifest.entries.length} entries`);
+          NODE
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Generate catalog and site
+        run: |
+          rm -rf site
+          npm run generate -- \
+            --manifest artifact/manifest.json \
+            --apks artifact/apks \
+            --out site \
+            --hide hide.json
+
+      - name: Install apk-tools 3.0.9
+        run: |
+          set -euo pipefail
+          curl -fsSL --retry 3 -o /tmp/apk-tools-static.apk \
+            https://dl-cdn.alpinelinux.org/alpine/v3.23/main/x86_64/apk-tools-static-3.0.9-r0.apk
+          rm -rf /tmp/apk-tools
+          mkdir -p /tmp/apk-tools
+          tar -xzf /tmp/apk-tools-static.apk --ignore-zeros -C /tmp/apk-tools
+          echo "APK_TOOL=/tmp/apk-tools/sbin/apk.static" >> "$GITHUB_ENV"
+          /tmp/apk-tools/sbin/apk.static version
+
+      - name: Sign index and add feed key
+        env:
+          FEED_SIGNING_KEY: ${{ secrets.FEED_SIGNING_KEY }}
+        run: |
+          set -euo pipefail
+          [ -n "$FEED_SIGNING_KEY" ] || { echo "FEED_SIGNING_KEY is not set" >&2; exit 1; }
+          umask 077
+          key="$RUNNER_TEMP/feed-key.pem"
+          printf '%s' "$FEED_SIGNING_KEY" > "$key"
+          trap 'rm -f "$key"' EXIT
+          (
+            cd site/x86_64
+            "$APK_TOOL" mkndx --allow-untrusted --sign-key "$key" \
+              --description "combinewrt 25.12.2 build-$BUILD_RUN_ID $(date -u +%Y-%m-%d)" \
+              --output packages.adb ./*.apk
+          )
+          rm -f "$key"
+          trap - EXIT
+          mkdir -p site/keys
+          cp keys/combinewrt-feed.pub.pem site/keys/combinewrt-feed.pub.pem
+          cp hide.json site/hide.json
+          ls -l site site/keys site/x86_64
+
+      - name: Verify signed index against catalog and files
+        run: |
+          node scripts/verify-feed.mjs \
+            --catalog site/catalog.json \
+            --index site/x86_64/packages.adb \
+            --apk-tool "$APK_TOOL"
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
