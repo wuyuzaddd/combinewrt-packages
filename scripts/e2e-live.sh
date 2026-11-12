@@ -11,7 +11,7 @@
 #
 # Usage:
 #   scripts/e2e-live.sh [--site-url URL] [--work-dir DIR]
-#                       [--rollback-run RUN_ID] [--restore-run RUN_ID]
+#                       [--rollback-run RUN_ID] [--restore-run RUN_ID] [--rootfs TAR]
 #
 # Requires: bash, curl, node, python3, tar, chroot (root), gh for rollback.
 set -euo pipefail
@@ -20,6 +20,7 @@ SITE_URL="https://wuyuzaddd.github.io/combinewrt-packages"
 WORK_DIR=""
 ROLLBACK_RUN=""
 RESTORE_RUN=""
+ROOTFS_ARG=""
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PACKAGES=(luci-lib-xterm taskd luci-lib-taskd luci-app-store luci-app-substore luci-app-fwlive)
 ROOTFS_URL="https://downloads.immortalwrt.org/releases/25.12.2/targets/x86/64/immortalwrt-25.12.2-x86_64-rootfs.tar.gz"
@@ -34,6 +35,7 @@ while [ $# -gt 0 ]; do
     --work-dir) WORK_DIR="$2"; shift 2 ;;
     --rollback-run) ROLLBACK_RUN="$2"; shift 2 ;;
     --restore-run) RESTORE_RUN="$2"; shift 2 ;;
+    --rootfs) ROOTFS_ARG="$2"; shift 2 ;;
     *) die "unknown argument: $1" ;;
   esac
 done
@@ -97,8 +99,11 @@ fi
 [ -x "$APK_TOOL" ] || die "apk tool not executable"
 
 ROOTFS_TAR="$WORK_DIR/rootfs.tar.gz"
+if [ -n "$ROOTFS_ARG" ]; then
+  ROOTFS_TAR="$ROOTFS_ARG"
+fi
 if [ ! -f "$ROOTFS_TAR" ]; then
-  curl -fsSL --retry 3 -o "$ROOTFS_TAR" "$ROOTFS_URL"
+  curl -fsSL --retry 5 --retry-all-errors -o "$ROOTFS_TAR" "$ROOTFS_URL"
 fi
 if [ ! -d "$ROOT/etc/apk" ]; then
   tar -xzf "$ROOTFS_TAR" -C "$ROOT"
@@ -123,7 +128,8 @@ log "apk add ${PACKAGES[*]}"
 chroot "$ROOT" /tmp/apk add "${PACKAGES[@]}" >/dev/null
 installed="$(chroot "$ROOT" /tmp/apk list --installed)"
 while read -r name version _; do
-  echo "$installed" | grep -q "^${name}-${version}$" || die "${name}-${version} is not installed"
+  echo "$installed" | awk -v pkg="${name}-${version}" '$1 == pkg { found = 1 } END { exit !found }' \
+    || die "${name}-${version} is not installed"
 done < <(awk '{print $1, $2}' "$WORK_DIR/versions.txt")
 log "all six packages installed from $LIVE_FEED"
 
@@ -160,7 +166,7 @@ if [ -n "$ROLLBACK_RUN" ]; then
   rolled="$(curl -fsSL -H 'Cache-Control: no-cache' "$SITE_URL/publish.json?t=$(date +%s)" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>console.log(JSON.parse(s).buildRunId))')"
   [ "$rolled" = "$ROLLBACK_RUN" ] || die "rollback published build $rolled, expected $ROLLBACK_RUN"
   chroot "$ROOT" /tmp/apk update >/dev/null
-  chroot "$ROOT" /tmp/apk add --reinstall "${PACKAGES[@]}" >/dev/null
+  chroot "$ROOT" /tmp/apk add "${PACKAGES[@]}" >/dev/null
   log "old index still installs after rollback"
 
   before="$(gh run list -R wuyuzaddd/combinewrt-packages --workflow publish --limit 1 --json databaseId --jq '.[0].databaseId')"

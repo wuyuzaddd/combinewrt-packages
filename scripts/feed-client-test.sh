@@ -149,11 +149,11 @@ python3 -m http.server "$PORT" --bind 127.0.0.1 --directory "$FEED" >"$WORK_DIR/
 SERVER_PID=$!
 ready=0
 for _ in $(seq 1 50); do
-  if curl -fs -o /dev/null "http://127.0.0.1:$PORT/catalog.json" 2>/dev/null; then ready=1; break; fi
+  if curl -fs --noproxy '*' -o /dev/null "http://127.0.0.1:$PORT/catalog.json" 2>/dev/null; then ready=1; break; fi
   sleep 0.2
 done
 [ "$ready" = 1 ] || die "feed server did not start"
-curl -fsS -o /dev/null "http://127.0.0.1:$PORT/x86_64/packages.adb" || die "feed server did not serve packages.adb"
+curl -fsS --noproxy '*' -o /dev/null "http://127.0.0.1:$PORT/x86_64/packages.adb" || die "feed server did not serve packages.adb"
 
 apk_guest() { "${SUDO[@]}" chroot "$ROOT" /tmp/apk "$@"; }
 
