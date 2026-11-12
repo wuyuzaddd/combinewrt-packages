@@ -294,6 +294,20 @@ apk update</code></pre>
   <p class="muted">也可以只安装需要的包：<code>apk add luci-app-store</code>。</p>
 </div>
 <div class="panel">
+  <h2>源码与许可</h2>
+  <ul class="plain">${catalog.packages
+    .map((entry) => {
+      const sourceLink = `https://github.com/${entry.sourceRepo}/tree/${entry.sourceCommit}/${entry.sourcePath}`;
+      return `<li><a href="${escapeHtml(sourceLink)}" rel="noreferrer">${escapeHtml(
+        entry.name,
+      )}</a> · ${escapeHtml(entry.license) || "未声明许可"} · <span class="muted">${escapeHtml(
+        entry.sourceRepo,
+      )} @ ${escapeHtml(entry.sourceCommit.slice(0, 12))} / ${escapeHtml(entry.sourcePath)}</span></li>`;
+    })
+    .join("")}</ul>
+  <p class="muted">每个包对应的源码提交与目录均可追溯；GPL 等 copyleft 包的完整源码可从上述链接取得。本页不镜像上游源码。</p>
+</div>
+<div class="panel">
   <h2>常见问题</h2>
   <dl class="meta-grid">
     <dt>404</dt><dd>软件源地址必须包含 <code>/x86_64/packages.adb</code>，不能只写到目录。</dd>

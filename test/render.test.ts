@@ -73,6 +73,16 @@ describe("renderSite", () => {
     expect(html).toContain("404");
   });
 
+  it("offers per-package source links and the independence disclaimer", () => {
+    const html = renderSite(fixtureCatalog()).get("install.html") as string;
+    expect(html).toContain("源码与许可");
+    expect(html).toContain(
+      "https://github.com/kiddin9/op-packages/tree/18b7d51c1a06427fa6e8c64b161869de7daded7e/luci-app-substore",
+    );
+    expect(html).toContain("GPL-3.0-or-later");
+    expect(html).toContain("没有隶属关系");
+  });
+
   it("renders package detail with metadata, versions, dependencies and source", () => {
     const html = renderSite(fixtureCatalog()).get("packages/luci-app-fwlive.html") as string;
     expect(html).toContain("0.1.55-r74");
