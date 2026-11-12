@@ -15,6 +15,23 @@ CombineWRT 的签名 apk 软件源与包目录站点，由 GitHub Pages 托管�
 2. 本仓库的 `publish` workflow 下载该 artifact，应用 `hide.json`，生成目录数据和静态页面，把 apk 复制到 `x86_64/`。
 3. 用 apk-tools 3.0.9 的 `mkndx` 以 EC P-256 私钥签名索引，随后整体通过 `actions/upload-pages-artifact` + `actions/deploy-pages` 部署。
 4. 页面与索引来自同一份 catalog；被 `hide.json` 隐藏的版本两边都不会出现。
+5. 每次成功部署都会写出 `/publish.json` 审计记录：build run、发布包集合、每个 apk 的 sha256、签名索引的 sha256，以及本次应用的 hide 列表。
+
+## 隐藏与保留
+
+`hide.json` 格式：
+
+```json
+{
+  "hidden": [
+    { "name": "taskd", "version": "1.0.3-r1", "reason": "regression", "hiddenAt": "2026-11-12T00:00:00Z" }
+  ]
+}
+```
+
+`version` 可省略，表示隐藏该包的全部版本；可再加 `arch` 只隐藏某个架构。下一轮发布会把命中的版本同时从 HTML 与 `packages.adb` 移除；整站替换后旧的 apk 直链自动 404。取消隐藏并重新发布即可恢复（前提是构建 artifact 仍在保留期内）。
+
+保留策略为“最新两个版本，且发布时间在 14 天内”；更旧的版本不会进入页面、索引或部署产物。
 
 ## 发布与验证
 
@@ -23,6 +40,7 @@ CombineWRT 的签名 apk 软件源与包目录站点，由 GitHub Pages 托管�
 - 客户端验证：`gh workflow run feed-test.yml`（默认取最近一次成功构建）。它在一次性 ImmortalWrt 25.12.2 rootfs 中用 apk 3.0.9 安装 6 个包，然后用一次性密钥构造三种负例：改一个字节的索引、用未知密钥重签的索引、改一个字节的 apk，三者都必须失败。
 - 密钥：生产私钥只在 Actions Secret `FEED_SIGNING_KEY`；`PACKAGES_TOKEN` 用于跨仓库下载 `packages-build` artifact（只读构建产物）。
 - `pages-fixture-preview` workflow 只用于手工预览 fixture 页面，不能用它覆盖生产源。
+- 线上验收：`npm run e2e:live`（root 运行）。它读取线上 `/publish.json`，核对每个 apk 的 sha256，在一次性 rootfs 中从 Pages 安装 6 个包，再跑篡改负例。加 `--rollback-run <run-id> --restore-run <run-id>` 可验证用旧 artifact 重新发布后旧索引仍可安装，然后恢复当前构建。
 
 ## 本地开发
 

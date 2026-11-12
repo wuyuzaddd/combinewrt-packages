@@ -14,7 +14,8 @@
     "test:watch": "vitest",
     "fixture": "tsx src/cli.ts fixture",
     "generate": "tsx src/cli.ts generate",
-    "verify": "tsx src/cli.ts verify"
+    "verify": "tsx src/cli.ts verify",
+    "e2e:live": "bash scripts/e2e-live.sh"
   },
   "dependencies": {
     "zod": "^4.1.12"
