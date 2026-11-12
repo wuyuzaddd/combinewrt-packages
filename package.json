@@ -1,0 +1,30 @@
+{
+  "name": "combinewrt-packages",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Signed apk feed and package catalog for CombineWRT",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "fixture": "tsx src/cli.ts fixture",
+    "generate": "tsx src/cli.ts generate",
+    "verify": "tsx src/cli.ts verify"
+  },
+  "dependencies": {
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "eslint": "^9.39.1",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.46.4",
+    "vitest": "^3.2.4"
+  }
+}
