@@ -155,9 +155,13 @@ jobs:
             // Extension entries pin one upstream ref per package, so the frozen
             // path is keyed by the feed lock (sha256 of the selected refs) that
             // the extension workflow reports, never by a single package ref.
-            const feedLock = process.env.REQUESTED_FEED_LOCK || manifest.feedLock || "";
+            const rawLock = process.env.REQUESTED_FEED_LOCK || manifest.feedLock || "";
+            // The feed lock is the sha256 of the selected refs; older selections
+            // stored all 64 hex characters, the 40-character prefix is what the
+            // frozen directory name uses.
+            const feedLock = /^[0-9a-f]{64}$/.test(rawLock) ? rawLock.slice(0, 40) : rawLock;
             if (!/^[0-9a-f]{40}$/.test(feedLock)) {
-              throw new Error(`extension manifest carries no usable feed lock (got '${feedLock}')`);
+              throw new Error(`extension manifest carries no usable feed lock (got '${rawLock}')`);
             }
             sourceCommit = feedLock;
           } else {
