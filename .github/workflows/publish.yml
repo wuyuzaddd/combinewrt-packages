@@ -12,11 +12,11 @@ name: publish
 #
 # feed_kind=extension publishes the extension build artifact (COMBINEWRT
 # extension workflow) into the extension tree. Both kinds sign with the same
-# stable project key (FEED_SIGNING_KEY): extension apks are built with a
-# throwaway key and re-signed here, so an image that installs only
-# /keys/combinewrt-feed.pub.pem can verify them. The two kinds share this
-# deploy but keep separate pins and audit records, and the extension publish
-# never touches /supplement, /staging or /x86_64.
+# stable project key (FEED_SIGNING_KEY): every published apk (supplement and
+# extension) is re-signed here, so an image that installs only
+# /keys/combinewrt-feed.pub.pem can verify its packages. The two kinds share
+# this deploy but keep separate pins and audit records, and the extension
+# publish never touches /supplement, /staging or /x86_64.
 #
 # publish_mode=staging only adds a staging directory, so the live index and its
 # packages stay untouched until the same build is re-dispatched with
@@ -220,11 +220,12 @@ jobs:
 
       - name: Re-sign packages and index with the feed key
         # Every published feed is anchored by ONE stable project key: the
-        # index is signed by it, and extension apks (built with a throwaway
-        # per-build key that only exists to check the build's own output) are
-        # re-signed by it here. The image installs only
-        # /etc/apk/keys/combinewrt-feed.pub.pem, so this is what makes
-        # extension packages verifiable on an installed system.
+        # index is signed by it, and every published apk is re-signed by it
+        # here. Supplement apks come out of the SDK build signed by a
+        # per-build key, extension apks by the extension workflow's throwaway
+        # key; the image installs only /etc/apk/keys/combinewrt-feed.pub.pem,
+        # so this step is what makes a published package verifiable on an
+        # installed system, for both channels.
         env:
           FEED_SIGNING_KEY: ${{ secrets.FEED_SIGNING_KEY }}
         run: |
@@ -234,16 +235,17 @@ jobs:
           key="$RUNNER_TEMP/feed-key.pem"
           printf '%s' "$FEED_SIGNING_KEY" > "$key"
           trap 'rm -f "$key"' EXIT
-          if [ "$FEED_KIND" = "extension" ]; then
-            # adbsign reads the existing package, so allow the build key's
-            # signature; --reset-signatures replaces it with the feed key's.
-            for apk in gen/x86_64/*.apk; do
-              "$APK_TOOL" --allow-untrusted adbsign --sign-key "$key" --reset-signatures "$apk"
-            done
-            # Re-signing changed every package's size and sha256. Refresh the
-            # catalog so verify-feed, the audit record and any pages rendered
-            # from it describe the bytes that are actually published.
-            node - <<'NODE'
+          # adbsign reads the existing package, so the build-time signature
+          # must be allowed; --reset-signatures replaces it with the feed
+          # key's, so every published apk carries exactly one signature and
+          # it is the one the image trusts.
+          for apk in gen/x86_64/*.apk; do
+            "$APK_TOOL" --allow-untrusted adbsign --sign-key "$key" --reset-signatures "$apk"
+          done
+          # Re-signing changed every package's size and sha256. Refresh the
+          # catalog so verify-feed, the audit record and any pages rendered
+          # from it describe the bytes that are actually published.
+          node - <<'NODE'
           const fs = require("node:fs");
           const { createHash } = require("node:crypto");
           const { join } = require("node:path");
@@ -271,7 +273,6 @@ jobs:
           fs.writeFileSync(catalogPath, `${JSON.stringify(catalog, null, 2)}\n`);
           console.log(`catalog: refreshed ${refreshed} version entries after re-signing`);
           NODE
-          fi
           (
             cd gen/x86_64
             "$APK_TOOL" mkndx --allow-untrusted --sign-key "$key" \
@@ -280,18 +281,18 @@ jobs:
           )
           rm -f "$key"
           trap - EXIT
-          if [ "$FEED_KIND" = "extension" ]; then
-            # Assert the property the image relies on: every published apk and
-            # the index verify against the exact key the image installs.
-            key_dir="$RUNNER_TEMP/feed-verify-keys"
-            rm -rf "$key_dir"
-            mkdir -p "$key_dir"
-            cp keys/combinewrt-feed.pub.pem "$key_dir/combinewrt-feed.pub.pem"
-            for apk in gen/x86_64/*.apk; do
-              "$APK_TOOL" verify --keys-dir "$key_dir" "$apk"
-            done
-            "$APK_TOOL" verify --keys-dir "$key_dir" gen/x86_64/packages.adb
-          fi
+          # Assert the property the image relies on: every published apk and
+          # the index verify against the exact key the image installs. The key
+          # directory is absolute: apk resolves a relative --keys-dir against
+          # its root, not the working directory.
+          key_dir="$RUNNER_TEMP/feed-verify-keys"
+          rm -rf "$key_dir"
+          mkdir -p "$key_dir"
+          cp keys/combinewrt-feed.pub.pem "$key_dir/combinewrt-feed.pub.pem"
+          for apk in gen/x86_64/*.apk; do
+            "$APK_TOOL" verify --keys-dir "$key_dir" "$apk"
+          done
+          "$APK_TOOL" verify --keys-dir "$key_dir" gen/x86_64/packages.adb
           mkdir -p gen/keys
           cp keys/combinewrt-feed.pub.pem gen/keys/combinewrt-feed.pub.pem
           cp hide.json gen/hide.json

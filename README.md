@@ -13,9 +13,10 @@ CombineWRT 的签名 apk 软件源与包目录站点，由 GitHub Pages 托管�
 
 1. `combinewrt-build` 仓库用 ImmortalWrt 25.12.2 x86_64 SDK 构建 6 个包，上传 `packages-build` artifact（`manifest.json` + `apks/`）。
 2. 本仓库的 `publish` workflow 下载该 artifact，应用 `hide.json`，生成目录数据和静态页面，把 apk 复制到 `x86_64/`。
-3. 用 apk-tools 3.0.9 的 `mkndx` 以 EC P-256 私钥签名索引，随后整体通过 `actions/upload-pages-artifact` + `actions/deploy-pages` 部署。
-4. 页面与索引来自同一份 catalog；被 `hide.json` 隐藏的版本两边都不会出现。
-5. 每次成功部署都会写出 `/publish.json` 审计记录：build run、发布包集合、每个 apk 的 sha256、签名索引的 sha256，以及本次应用的 hide 列表。
+3. 用 Actions Secret `FEED_SIGNING_KEY`（EC P-256 项目源私钥）把每个待发布的 apk 重新签名（apk-tools 3.0.9 `adbsign --reset-signatures`），按新字节刷新 catalog 的 `sha256`/`fileSize`，再用 `mkndx` 以同一把密钥签名索引；提交前对每个 apk 和索引以 `keys/combinewrt-feed.pub.pem`（仅公钥）执行 `apk verify`。supplement 与 extension 两条发布通道都走这一步，因此镜像只安装 `/etc/apk/keys/combinewrt-feed.pub.pem` 就能安装任意通道发布的包。
+4. 签名校验通过后整体通过 `actions/upload-pages-artifact` + `actions/deploy-pages` 部署。
+5. 页面与索引来自同一份 catalog；被 `hide.json` 隐藏的版本两边都不会出现。
+6. 每次成功部署都会写出 `/publish.json` 审计记录：build run、发布包集合、每个 apk 的 sha256、签名索引的 sha256，以及本次应用的 hide 列表。
 
 ## 隐藏与保留
 
