@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 2,
+  "channel": "staging",
+  "buildRunId": "43702446473",
+  "buildRunNumber": 43702446473,
+  "baseVersion": "25.12.2",
+  "target": "x86_64",
+  "sourceCommit": "19a44706dde7554f21c9d0503cdcfc399914067f",
+  "arch": "x86_64",
+  "generatedAt": "2026-11-15T10:08:14.598Z",
+  "publishedAt": "2026-11-15T10:15:08.138Z",
+  "frozenPath": "/staging/25.12.2/x86_64/19a44706dde7554f21c9d0503cdcfc399914067f",
+  "keyFingerprint": "f71286670f3cc138ec4f55e650c6aa4ed2bd7fff7d29851aef2ac53bae72d083",
+  "promotedFromStaging": false,
+  "index": {
+    "file": "staging/25.12.2/x86_64/19a44706dde7554f21c9d0503cdcfc399914067f/packages.adb",
+    "sha256": "c04acf46cdb6ad1ac3608fc96a6475794a06a8558bf1e966a98b1e393d760bd5",
+    "fileSize": 1644
+  },
+  "packages": [
+    {
+      "name": "luci-app-fwlive",
+      "version": "0.1.55-r74",
+      "arch": "noarch",
+      "sha256": "72bf16cdd12de677f0fc4e92d5daca3c9fa4504c5fd5b6437f56b1b76da7c28e",
+      "fileSize": 83866,
+      "sourceRepo": "kiddin9/op-packages",
+      "sourceCommit": "19a44706dde7554f21c9d0503cdcfc399914067f",
+      "sourcePath": "luci-app-fwlive"
+    },
+    {
+      "name": "luci-app-store",
+      "version": "0.2.1-r1",
+      "arch": "noarch",
+      "sha256": "b82c45a3d37ef5d84ae29f6e59c82903aa1c45dd11f8b2045094d6de0d82f3f6",
+      "fileSize": 116299,
+      "sourceRepo": "kiddin9/op-packages",
+      "sourceCommit": "19a44706dde7554f21c9d0503cdcfc399914067f",
+      "sourcePath": "luci-app-store"
+    },
+    {
+      "name": "luci-app-substore",
+      "version": "2.7.3-r25",
+      "arch": "noarch",
+      "sha256": "af7d81bbb53c0bb52aab77de2f9617cd2dff2922c20bd244d32000f3473697ad",
+      "fileSize": 144462,
+      "sourceRepo": "kiddin9/op-packages",
+      "sourceCommit": "19a44706dde7554f21c9d0503cdcfc399914067f",
+      "sourcePath": "luci-app-substore"
+    },
+    {
+      "name": "luci-lib-taskd",
+      "version": "1.0.26-r2",
+      "arch": "noarch",
+      "sha256": "58f0438aaded69b8625f3abdb18d061d1ede6d5b54ee0041887440bd2123871f",
+      "fileSize": 7387,
+      "sourceRepo": "kiddin9/op-packages",
+      "sourceCommit": "19a44706dde7554f21c9d0503cdcfc399914067f",
+      "sourcePath": "luci-lib-taskd"
+    },
+    {
+      "name": "luci-lib-xterm",
+      "version": "4.18.0-r1",
+      "arch": "noarch",
+      "sha256": "eeb6194573aaedb9b03afe322b52a7fc803a03e2000c88281142cac6698b5497",
+      "fileSize": 78981,
+      "sourceRepo": "kiddin9/op-packages",
+      "sourceCommit": "19a44706dde7554f21c9d0503cdcfc399914067f",
+      "sourcePath": "luci-lib-xterm"
+    },
+    {
+      "name": "taskd",
+      "version": "1.0.3-r1",
+      "arch": "noarch",
+      "sha256": "10a9ebd9a160f67ffb74b5117e90df7ee14da93ff56597c3a463360cf8956542",
+      "fileSize": 2218,
+      "sourceRepo": "kiddin9/op-packages",
+      "sourceCommit": "19a44706dde7554f21c9d0503cdcfc399914067f",
+      "sourcePath": "taskd"
+    }
+  ],
+  "hidden": []
+}
