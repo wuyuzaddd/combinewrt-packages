@@ -215,6 +215,18 @@ jobs:
           echo "APK_TOOL=/tmp/apk-tools/sbin/apk.static" >> "$GITHUB_ENV"
           /tmp/apk-tools/sbin/apk.static --version
 
+      - name: Attach the extension package signing key
+        # The SDK signs each extension apk with a key generated per build. Ship
+        # its public half inside the feed so `apk verify` can be re-run against
+        # the published packages without any out-of-band key.
+        if: ${{ env.FEED_KIND == 'extension' }}
+        run: |
+          set -euo pipefail
+          test -f artifact/build/apk-signing-key.pem
+          mkdir -p gen/x86_64/keys
+          cp artifact/build/apk-signing-key.pem gen/x86_64/keys/apk-signing-key.pem
+          sha256sum gen/x86_64/keys/apk-signing-key.pem
+
       - name: Sign index and add feed key
         env:
           FEED_SIGNING_KEY: ${{ secrets.FEED_SIGNING_KEY }}
