@@ -12,8 +12,11 @@ name: publish
 #
 # feed_kind=extension publishes the extension build artifact (COMBINEWRT
 # extension workflow) into the extension tree. Both kinds sign with the same
-# project key and share this deploy, but keep separate pins and audit records,
-# and the extension publish never touches /supplement, /staging or /x86_64.
+# stable project key (FEED_SIGNING_KEY): extension apks are built with a
+# throwaway key and re-signed here, so an image that installs only
+# /keys/combinewrt-feed.pub.pem can verify them. The two kinds share this
+# deploy but keep separate pins and audit records, and the extension publish
+# never touches /supplement, /staging or /x86_64.
 #
 # publish_mode=staging only adds a staging directory, so the live index and its
 # packages stay untouched until the same build is re-dispatched with
@@ -215,19 +218,13 @@ jobs:
           echo "APK_TOOL=/tmp/apk-tools/sbin/apk.static" >> "$GITHUB_ENV"
           /tmp/apk-tools/sbin/apk.static --version
 
-      - name: Attach the extension package signing key
-        # The SDK signs each extension apk with a key generated per build. Ship
-        # its public half inside the feed so `apk verify` can be re-run against
-        # the published packages without any out-of-band key.
-        if: ${{ env.FEED_KIND == 'extension' }}
-        run: |
-          set -euo pipefail
-          test -f artifact/apk-signing-key.pem
-          mkdir -p gen/x86_64/keys
-          cp artifact/apk-signing-key.pem gen/x86_64/keys/apk-signing-key.pem
-          sha256sum gen/x86_64/keys/apk-signing-key.pem
-
-      - name: Sign index and add feed key
+      - name: Re-sign packages and index with the feed key
+        # Every published feed is anchored by ONE stable project key: the
+        # index is signed by it, and extension apks (built with a throwaway
+        # per-build key that only exists to check the build's own output) are
+        # re-signed by it here. The image installs only
+        # /etc/apk/keys/combinewrt-feed.pub.pem, so this is what makes
+        # extension packages verifiable on an installed system.
         env:
           FEED_SIGNING_KEY: ${{ secrets.FEED_SIGNING_KEY }}
         run: |
@@ -237,6 +234,13 @@ jobs:
           key="$RUNNER_TEMP/feed-key.pem"
           printf '%s' "$FEED_SIGNING_KEY" > "$key"
           trap 'rm -f "$key"' EXIT
+          if [ "$FEED_KIND" = "extension" ]; then
+            # adbsign reads the existing package, so allow the build key's
+            # signature; --reset-signatures replaces it with the feed key's.
+            for apk in gen/x86_64/*.apk; do
+              "$APK_TOOL" --allow-untrusted adbsign --sign-key "$key" --reset-signatures "$apk"
+            done
+          fi
           (
             cd gen/x86_64
             "$APK_TOOL" mkndx --allow-untrusted --sign-key "$key" \
@@ -245,6 +249,18 @@ jobs:
           )
           rm -f "$key"
           trap - EXIT
+          if [ "$FEED_KIND" = "extension" ]; then
+            # Assert the property the image relies on: every published apk and
+            # the index verify against the exact key the image installs.
+            key_dir="$RUNNER_TEMP/feed-verify-keys"
+            rm -rf "$key_dir"
+            mkdir -p "$key_dir"
+            cp keys/combinewrt-feed.pub.pem "$key_dir/combinewrt-feed.pub.pem"
+            for apk in gen/x86_64/*.apk; do
+              "$APK_TOOL" verify --keys-dir "$key_dir" "$apk"
+            done
+            "$APK_TOOL" verify --keys-dir "$key_dir" gen/x86_64/packages.adb
+          fi
           mkdir -p gen/keys
           cp keys/combinewrt-feed.pub.pem gen/keys/combinewrt-feed.pub.pem
           cp hide.json gen/hide.json
