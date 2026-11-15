@@ -136,7 +136,20 @@ export function publishSite(options) {
     promotedFromStaging = existsSync(stagingDir);
 
     livePath = posix.join("/", options.kind, options.baseVersion, options.target);
-    mergeContents(generated, join(options.state, ...livePath.split("/").filter(Boolean)), true);
+    const liveDir = join(options.state, ...livePath.split("/").filter(Boolean));
+    mergeContents(generated, liveDir, true);
+
+    if (options.kind === "extension") {
+      // Earlier extension publishes shipped the build job's per-build public
+      // key inside the live feed. The feed is anchored by the project key in
+      // /keys/, so drop the legacy file (and its directory once empty).
+      const legacyKey = join(liveDir, "keys", "apk-signing-key.pem");
+      if (existsSync(legacyKey)) rmSync(legacyKey, { force: true });
+      const legacyDir = join(liveDir, "keys");
+      if (existsSync(legacyDir) && readdirSync(legacyDir).length === 0) {
+        rmSync(legacyDir, { recursive: true, force: true });
+      }
+    }
 
     if (options.kind === "supplement") {
       // V1 clients still read the flat channel; keep it byte-identical to the

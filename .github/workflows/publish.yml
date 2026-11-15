@@ -240,6 +240,37 @@ jobs:
             for apk in gen/x86_64/*.apk; do
               "$APK_TOOL" --allow-untrusted adbsign --sign-key "$key" --reset-signatures "$apk"
             done
+            # Re-signing changed every package's size and sha256. Refresh the
+            # catalog so verify-feed, the audit record and any pages rendered
+            # from it describe the bytes that are actually published.
+            node - <<'NODE'
+          const fs = require("node:fs");
+          const { createHash } = require("node:crypto");
+          const { join } = require("node:path");
+          const catalogPath = "gen/catalog.json";
+          const catalog = JSON.parse(fs.readFileSync(catalogPath, "utf8"));
+          let refreshed = 0;
+          const visit = (node) => {
+            if (Array.isArray(node)) {
+              node.forEach(visit);
+              return;
+            }
+            if (!node || typeof node !== "object") return;
+            if (typeof node.asset === "string") {
+              const file = join("gen/x86_64", node.asset);
+              if (fs.existsSync(file)) {
+                const bytes = fs.readFileSync(file);
+                node.fileSize = bytes.length;
+                node.sha256 = createHash("sha256").update(bytes).digest("hex");
+                refreshed += 1;
+              }
+            }
+            Object.values(node).forEach(visit);
+          };
+          visit(catalog);
+          fs.writeFileSync(catalogPath, `${JSON.stringify(catalog, null, 2)}\n`);
+          console.log(`catalog: refreshed ${refreshed} version entries after re-signing`);
+          NODE
           fi
           (
             cd gen/x86_64
