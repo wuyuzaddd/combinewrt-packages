@@ -1,29 +1,29 @@
 {
   "schemaVersion": 2,
   "channel": "live",
-  "buildRunId": "43711097432",
-  "buildRunNumber": 43711097432,
+  "buildRunId": "43724810303",
+  "buildRunNumber": 43724810303,
   "baseVersion": "25.12.2",
   "target": "x86_64",
   "sourceCommit": "c5c1f7e3b717f0e6bdd801e154d114604b54bdf3",
   "arch": "x86_64",
-  "generatedAt": "2026-11-15T11:55:29.013Z",
-  "publishedAt": "2026-11-15T11:56:48.141Z",
+  "generatedAt": "2026-11-15T14:32:59.424Z",
+  "publishedAt": "2026-11-15T14:38:57.196Z",
   "frozenPath": "/extension/25.12.2/x86_64/c5c1f7e3b717f0e6bdd801e154d114604b54bdf3",
   "keyFingerprint": "f71286670f3cc138ec4f55e650c6aa4ed2bd7fff7d29851aef2ac53bae72d083",
   "promotedFromStaging": false,
   "index": {
-    "file": "x86_64/packages.adb",
-    "sha256": "082f653ea26c70d4a8d98bc7594169790bb001be180e5792ddeb0faa097a0f8f",
-    "fileSize": 1644
+    "file": "extension/25.12.2/x86_64/packages.adb",
+    "sha256": "d1f0b801a4e29a35fbefe6e6450e7e8c8bed217c0c405054c79318a15ff31815",
+    "fileSize": 784
   },
   "packages": [
     {
       "name": "luci-theme-argon",
       "version": "3.1.4-r20261113",
       "arch": "noarch",
-      "sha256": "098d45263dbb9656a18f913cbd62d036f68ffbaea2b809c98d07f9ee2613b94c",
-      "fileSize": 303129,
+      "sha256": "15afae1afed5e83006a2b066c7e1d52c9c7b63ae5937f3b1d6fa89c1f6cef865",
+      "fileSize": 302635,
       "sourceRepo": "jerrykuku/luci-theme-argon",
       "sourceCommit": "a121960d2adbe9d57333db3f4e045467dcb375c9",
       "sourcePath": "."
@@ -32,8 +32,8 @@
       "name": "luci-theme-aurora",
       "version": "1.4.3-r20261104",
       "arch": "noarch",
-      "sha256": "594e228185fa0de066ea4cbc48a7f7d879cd026395eda0079e28b5bdd13aece5",
-      "fileSize": 186502,
+      "sha256": "7a9cbfca2af95d570e921a0ca6739b33957accd71679e66a9bde94afe2a5b1fe",
+      "fileSize": 186030,
       "sourceRepo": "eamonxg/luci-theme-aurora",
       "sourceCommit": "298dbcc74ddf820923a51285fb0826d429e5d7ca",
       "sourcePath": "."
