@@ -8,14 +8,14 @@
   "sourceCommit": "19a44706dde7554f21c9d0503cdcfc399914067f",
   "arch": "x86_64",
   "generatedAt": "2026-11-15T10:08:14.598Z",
-  "publishedAt": "2026-11-15T10:12:55.604Z",
+  "publishedAt": "2026-11-15T10:16:50.923Z",
   "frozenPath": "/supplement/25.12.2/x86_64/19a44706dde7554f21c9d0503cdcfc399914067f",
   "keyFingerprint": "f71286670f3cc138ec4f55e650c6aa4ed2bd7fff7d29851aef2ac53bae72d083",
-  "promotedFromStaging": false,
+  "promotedFromStaging": true,
   "index": {
     "file": "x86_64/packages.adb",
-    "sha256": "0a835e750c0022b77f82d481cadb5750473af2a205771dde249351b87b273a48",
-    "fileSize": 1646
+    "sha256": "082f653ea26c70d4a8d98bc7594169790bb001be180e5792ddeb0faa097a0f8f",
+    "fileSize": 1644
   },
   "packages": [
     {
