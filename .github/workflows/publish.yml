@@ -1,25 +1,40 @@
 name: publish
 
-# Publishes a signed apk feed for a successful combinewrt-build "packages" run.
+# Publishes a signed apk feed for a successful combinewrt-build run.
 #
 # The site tree is version-frozen and lives on the gh-pages branch:
 #   /supplement/<base>/<target>/<commit>/  one immutable published index
 #   /supplement/<base>/<target>/           live pointer for that base version
 #   /staging/<base>/<target>/<commit>/     staged index that was never promoted
 #   /x86_64/                               V1 flat channel, kept byte-identical
+#   /extension/<base>/<target>/<commit>/   one immutable extension index (ticket 12)
+#   /extension/<base>/<target>/            live extension pointer, own pin
+#
+# feed_kind=extension publishes the extension build artifact (COMBINEWRT
+# extension workflow) into the extension tree. Both kinds sign with the same
+# project key and share this deploy, but keep separate pins and audit records,
+# and the extension publish never touches /supplement, /staging or /x86_64.
 #
 # publish_mode=staging only adds a staging directory, so the live index and its
 # packages stay untouched until the same build is re-dispatched with
 # publish_mode=live (the staging -> live promotion path).
 on:
   repository_dispatch:
-    types: [packages-built]
+    types: [packages-built, extension-built]
   workflow_dispatch:
     inputs:
       build_run_id:
-        description: combinewrt-build "packages" workflow run id
+        description: combinewrt-build workflow run id (packages or extension)
         required: true
         type: string
+      feed_kind:
+        description: supplement publishes /supplement, extension publishes /extension
+        required: false
+        default: supplement
+        type: choice
+        options:
+          - supplement
+          - extension
       publish_mode:
         description: live also updates the live pointer; staging only stages the index
         required: false
@@ -54,8 +69,10 @@ jobs:
       BUILD_RUN_ID: ${{ github.event.inputs.build_run_id || github.event.client_payload.build_run_id }}
       PUBLISH_MODE: ${{ github.event.inputs.publish_mode || github.event.client_payload.publish_mode || 'live' }}
       ALLOW_PARTIAL: ${{ github.event.inputs.allow_partial || 'false' }}
+      FEED_KIND: ${{ github.event.inputs.feed_kind || github.event.client_payload.feed_kind || 'supplement' }}
       REQUESTED_BASE_VERSION: ${{ github.event.client_payload.base_version || '' }}
       REQUESTED_SOURCE_COMMIT: ${{ github.event.client_payload.source_commit || '' }}
+      REQUESTED_FEED_LOCK: ${{ github.event.client_payload.feed_lock || '' }}
       GH_TOKEN: ${{ secrets.PACKAGES_TOKEN }}
     steps:
       - uses: actions/checkout@v4
@@ -70,12 +87,22 @@ jobs:
             live|staging) ;;
             *) echo "invalid publish_mode: '$PUBLISH_MODE'" >&2; exit 1 ;;
           esac
+          case "$FEED_KIND" in
+            supplement|extension) ;;
+            *) echo "invalid feed_kind: '$FEED_KIND'" >&2; exit 1 ;;
+          esac
           run_json="$(gh run view "$BUILD_RUN_ID" --repo wuyuzaddd/combinewrt-build \
             --json workflowName,status,conclusion,headBranch,name,displayTitle)"
           echo "$run_json"
           node -e '
             const run = JSON.parse(process.argv[1]);
-            if (run.workflowName !== "packages") throw new Error("not a packages workflow run");
+            const kind = process.env.FEED_KIND;
+            const expected = kind === "extension" ? "extension" : "packages";
+            if (run.workflowName !== expected) throw new Error(`not an ${expected} workflow run`);
+            if (kind === "extension" && run.headBranch) {
+              // Extension runs are pushed to a ticket branch by design; the
+              // artifact review is the gate, not the default branch.
+            }
             if (run.status !== "completed" || run.conclusion !== "success") {
               throw new Error("build run is not successful: " + run.status + "/" + run.conclusion);
             }
@@ -84,9 +111,13 @@ jobs:
       - name: Download build artifact
         run: |
           set -euo pipefail
+          case "$FEED_KIND" in
+            extension) artifact_name="extension-build" ;;
+            *) artifact_name="packages-build" ;;
+          esac
           rm -rf artifact
           gh run download "$BUILD_RUN_ID" --repo wuyuzaddd/combinewrt-build \
-            --name packages-build --dir artifact
+            --name "$artifact_name" --dir artifact
           test -f artifact/manifest.json
           ls -l artifact artifact/apks | head -30
 
@@ -96,6 +127,10 @@ jobs:
           node - <<'NODE'
           const fs = require("node:fs");
           const manifest = JSON.parse(fs.readFileSync("artifact/manifest.json", "utf8"));
+          const kind = process.env.FEED_KIND;
+          if ((manifest.feed ?? "supplement") !== kind) {
+            throw new Error(`manifest feed ${manifest.feed} does not match feed_kind ${kind}`);
+          }
           if (manifest.buildRunId !== Number(process.env.BUILD_RUN_ID)) {
             throw new Error(`manifest buildRunId ${manifest.buildRunId} != ${process.env.BUILD_RUN_ID}`);
           }
@@ -115,17 +150,33 @@ jobs:
           const baseVersion = process.env.REQUESTED_BASE_VERSION || manifest.baseVersion;
           if (!/^[0-9A-Za-z._-]+$/.test(baseVersion)) throw new Error(`invalid base version ${baseVersion}`);
           const ok = manifest.entries.filter((entry) => entry.status === "ok");
-          const commits = new Set(ok.map((entry) => entry.sourceCommit).filter(Boolean));
-          if (commits.size > 1) throw new Error(`manifest mixes source commits: ${[...commits].join(", ")}`);
-          const sourceCommit = process.env.REQUESTED_SOURCE_COMMIT || [...commits][0] || "";
-          if (!/^[0-9a-f]{40}$/.test(sourceCommit)) {
-            throw new Error(`manifest carries no usable source commit (got '${sourceCommit}')`);
-          }
-          if (process.env.REQUESTED_SOURCE_COMMIT && [...commits].length > 0 && !commits.has(process.env.REQUESTED_SOURCE_COMMIT)) {
-            throw new Error(`requested source commit ${process.env.REQUESTED_SOURCE_COMMIT} was not built`);
+          let sourceCommit;
+          if (kind === "extension") {
+            // Extension entries pin one upstream ref per package, so the frozen
+            // path is keyed by the feed lock (sha256 of the selected refs) that
+            // the extension workflow reports, never by a single package ref.
+            const feedLock = process.env.REQUESTED_FEED_LOCK || manifest.feedLock || "";
+            if (!/^[0-9a-f]{40}$/.test(feedLock)) {
+              throw new Error(`extension manifest carries no usable feed lock (got '${feedLock}')`);
+            }
+            sourceCommit = feedLock;
+          } else {
+            const commits = new Set(ok.map((entry) => entry.sourceCommit).filter(Boolean));
+            if (commits.size > 1) throw new Error(`manifest mixes source commits: ${[...commits].join(", ")}`);
+            sourceCommit = process.env.REQUESTED_SOURCE_COMMIT || [...commits][0] || "";
+            if (!/^[0-9a-f]{40}$/.test(sourceCommit)) {
+              throw new Error(`manifest carries no usable source commit (got '${sourceCommit}')`);
+            }
+            if (process.env.REQUESTED_SOURCE_COMMIT && [...commits].length > 0 && !commits.has(process.env.REQUESTED_SOURCE_COMMIT)) {
+              throw new Error(`requested source commit ${process.env.REQUESTED_SOURCE_COMMIT} was not built`);
+            }
           }
 
-          const lines = [`BASE_VERSION=${baseVersion}`, `SOURCE_COMMIT=${sourceCommit}`];
+          const lines = [
+            `BASE_VERSION=${baseVersion}`,
+            `SOURCE_COMMIT=${sourceCommit}`,
+            `FEED_PATH=${kind}/${baseVersion}/${process.env.TARGET || "x86_64"}`,
+          ];
           fs.appendFileSync(process.env.GITHUB_ENV, `${lines.join("\n")}\n`);
           console.log(`publishing ${process.env.PUBLISH_MODE} for ${baseVersion}/${sourceCommit}`);
           NODE
@@ -139,12 +190,15 @@ jobs:
 
       - name: Generate catalog and package layout
         run: |
+          set -euo pipefail
           rm -rf gen
-          npm run generate -- \
-            --manifest artifact/manifest.json \
-            --apks artifact/apks \
-            --out gen \
-            --hide hide.json
+          args=(--manifest artifact/manifest.json --apks artifact/apks --out gen --hide hide.json)
+          if [ "$FEED_KIND" = "extension" ]; then
+            # Extension pages and the install hint must point at the extension
+            # entry in apk's repository list, not at the V1 flat channel.
+            args+=(--feed-url "$LIVE_URL/extension/$BASE_VERSION/$TARGET/packages.adb")
+          fi
+          npm run generate -- "${args[@]}"
 
       - name: Install apk-tools 3.0.9
         run: |
@@ -206,6 +260,7 @@ jobs:
         run: |
           set -euo pipefail
           node scripts/publish-site.mjs \
+            --kind "$FEED_KIND" \
             --generated gen \
             --state site \
             --channel "$PUBLISH_MODE" \
@@ -218,6 +273,12 @@ jobs:
 
       - name: Write public audit record
         run: |
+          audit_out="publish.json"
+          if [ "$FEED_KIND" = "extension" ]; then
+            # Separate audit record: the extension pin never overwrites the
+            # supplement record the site auto-adopts.
+            audit_out="extension-$PUBLISH_MODE.json"
+          fi
           node scripts/write-audit.mjs \
             --site site \
             --manifest artifact/manifest.json \
@@ -229,14 +290,15 @@ jobs:
             --source-commit "$SOURCE_COMMIT" \
             --frozen-path "$FROZEN_PATH" \
             --promoted-from-staging "$PROMOTED_FROM_STAGING" \
-            --key gen/keys/combinewrt-feed.pub.pem
+            --key gen/keys/combinewrt-feed.pub.pem \
+            --out "$audit_out"
 
       - name: Summary
         if: always()
         run: |
           set -euo pipefail
           {
-            echo "### publish ($PUBLISH_MODE)"
+            echo "### publish $FEED_KIND ($PUBLISH_MODE)"
             echo
             echo "- build run: $BUILD_RUN_ID"
             echo "- base version: $BASE_VERSION"
@@ -261,7 +323,7 @@ jobs:
           if git -C site diff --cached --quiet; then
             echo "publish: nothing changed"
           else
-            git -C site commit -q -m "publish $PUBLISH_MODE $BASE_VERSION/$TARGET build-$BUILD_RUN_ID ($SOURCE_COMMIT)"
+            git -C site commit -q -m "publish $FEED_KIND $PUBLISH_MODE $BASE_VERSION/$TARGET build-$BUILD_RUN_ID ($SOURCE_COMMIT)"
           fi
           git -C site push "https://x-access-token:${GH_TOKEN}@github.com/wuyuzaddd/combinewrt-packages.git" HEAD:gh-pages
 

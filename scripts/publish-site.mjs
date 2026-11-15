@@ -15,7 +15,7 @@
  *
  * Usage: node scripts/publish-site.mjs --generated gen --state site \
  *          --channel live --base-version 25.12.2 --target x86_64 \
- *          --source-commit <40 hex> --keep 20
+ *          --source-commit <40 hex> --keep 20 [--kind supplement|extension]
  *
  * Prints `frozen_path=<path>` and `promoted_from_staging=<true|false>` for the
  * workflow to pass on to the audit record.
@@ -44,7 +44,11 @@ export function parseOptions(argv) {
     target: option(argv, "target", "x86_64"),
     sourceCommit: option(argv, "source-commit"),
     keep: Number(option(argv, "keep", "20")),
+    kind: option(argv, "kind", "supplement"),
   };
+  if (options.kind !== "supplement" && options.kind !== "extension") {
+    throw new Error(`--kind must be supplement or extension (got '${options.kind}')`);
+  }
   if (options.channel !== "live" && options.channel !== "staging") {
     throw new Error(`--channel must be live or staging (got '${options.channel}')`);
   }
@@ -107,6 +111,11 @@ function mergeContents(from, to, prune) {
 }
 
 function frozenRoot(options) {
+  if (options.kind === "extension") {
+    // The extension feed has its own frozen tree and pin; a staging publish
+    // must never collide with a staged supplement index either.
+    return options.channel === "live" ? "extension" : "staging/extension";
+  }
   return options.channel === "live" ? "supplement" : "staging";
 }
 
@@ -126,27 +135,30 @@ export function publishSite(options) {
     const stagingDir = join(options.state, "staging", options.baseVersion, options.target, options.sourceCommit);
     promotedFromStaging = existsSync(stagingDir);
 
-    livePath = posix.join("/supplement", options.baseVersion, options.target);
+    livePath = posix.join("/", options.kind, options.baseVersion, options.target);
     mergeContents(generated, join(options.state, ...livePath.split("/").filter(Boolean)), true);
 
-    // V1 clients still read the flat channel; keep it byte-identical to the
-    // live pointer so both URLs serve the same signed index.
-    mergeContents(generated, join(options.state, "x86_64"), true);
+    if (options.kind === "supplement") {
+      // V1 clients still read the flat channel; keep it byte-identical to the
+      // live pointer so both URLs serve the same signed index. The extension
+      // feed never touches it.
+      mergeContents(generated, join(options.state, "x86_64"), true);
 
-    copyFileIfPresent(join(options.generated, "catalog.json"), join(options.state, "catalog.json"));
-    copyFileIfPresent(join(options.generated, "index.html"), join(options.state, "index.html"));
-    copyFileIfPresent(join(options.generated, "hide.json"), join(options.state, "hide.json"));
-    copyFileIfPresent(
-      join(process.cwd(), "keys", "combinewrt-feed.pub.pem"),
-      join(options.state, "keys", "combinewrt-feed.pub.pem"),
-    );
+      copyFileIfPresent(join(options.generated, "catalog.json"), join(options.state, "catalog.json"));
+      copyFileIfPresent(join(options.generated, "index.html"), join(options.state, "index.html"));
+      copyFileIfPresent(join(options.generated, "hide.json"), join(options.state, "hide.json"));
+      copyFileIfPresent(
+        join(process.cwd(), "keys", "combinewrt-feed.pub.pem"),
+        join(options.state, "keys", "combinewrt-feed.pub.pem"),
+      );
+    }
   }
 
   // Write the frozen copy last: copyDir replaces its destination directory and
   // the live pointer directory is the parent of the frozen path.
   copyDir(generated, join(options.state, ...frozenPath.split("/").filter(Boolean)));
   if (options.channel === "live") {
-    pruneFrozen(join(options.state, "supplement", options.baseVersion, options.target), options.keep, new Set([]));
+    pruneFrozen(join(options.state, options.kind, options.baseVersion, options.target), options.keep, new Set([]));
   }
 
   return { frozenPath, livePath, promotedFromStaging };
@@ -170,6 +182,7 @@ function pruneFrozen(dir, keep, preserve) {
 export function main(argv) {
   const options = parseOptions(argv);
   const result = publishSite(options);
+  console.log(`kind: ${options.kind}`);
   console.log(`channel: ${options.channel}`);
   console.log(`frozen_path=${result.frozenPath}`);
   if (result.livePath) console.log(`live_path=${result.livePath}`);
