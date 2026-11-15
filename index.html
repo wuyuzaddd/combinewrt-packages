@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>CombineWRT 软件包</title>
+<meta name="description" content="CombineWRT 的签名 apk 软件源与软件包目录" />
+<style>
+:root{color-scheme:light dark;--bg:#f7f8fa;--fg:#16181d;--muted:#5c6470;--card:#fff;--line:#dfe3e9;--accent:#2563eb;--accent-fg:#fff;--chip:#eef2f8;--code:#f1f3f6}
+@media (prefers-color-scheme:dark){:root{--bg:#101216;--fg:#e8eaee;--muted:#9aa4b2;--card:#181b21;--line:#2a2f38;--accent:#60a5fa;--accent-fg:#0b1220;--chip:#222834;--code:#1c2027}}
+*{box-sizing:border-box}html{background:var(--bg);color:var(--fg)}
+body{margin:0;font:16px/1.65 ui-sans-serif,system-ui,-apple-system,"Segoe UI","Noto Sans SC",sans-serif}
+a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+.wrap{max-width:64rem;margin:0 auto;padding:0 1.25rem}
+header.site{border-bottom:1px solid var(--line);background:var(--card)}
+header.site .wrap{display:flex;align-items:center;justify-content:space-between;gap:1rem;min-height:3.5rem}
+.brand{font-weight:700;color:var(--fg)}nav{display:flex;gap:1rem;flex-wrap:wrap;font-size:.95rem}
+main{padding:2rem 0 3rem}
+h1{font-size:2rem;line-height:1.2;margin:0 0 .5rem}h2{line-height:1.3}
+p{margin:.5rem 0}.muted{color:var(--muted)}
+.hero{padding:1rem 0 1.5rem;border-bottom:1px solid var(--line)}
+.meta{display:flex;gap:.5rem 1rem;flex-wrap:wrap;color:var(--muted);font-size:.9rem;margin-top:.75rem}
+.feed{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin-top:1rem}
+code{background:var(--code);padding:.15rem .35rem;border-radius:4px;font-size:.9em;overflow-wrap:anywhere}
+.feed code{padding:.5rem .6rem}
+button{font:inherit;border:1px solid var(--line);background:var(--card);color:var(--fg);padding:.45rem .8rem;border-radius:6px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+.toolbar{display:flex;gap:.75rem;flex-wrap:wrap;align-items:center;padding:1.25rem 0}
+.toolbar input,.toolbar select{font:inherit;padding:.5rem .6rem;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--fg);min-width:10rem}
+.toolbar input{flex:1 1 16rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(17rem,1fr));gap:1rem;padding:0;margin:0;list-style:none}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:1rem;display:flex;flex-direction:column;gap:.6rem}
+.card-head{display:flex;justify-content:space-between;gap:.5rem;align-items:baseline}
+.card h2{font-size:1.05rem;margin:0}
+.card p{margin:0;color:var(--muted);font-size:.92rem;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.chips{display:flex;gap:.4rem;flex-wrap:wrap;font-size:.78rem;color:var(--muted)}
+.chip{background:var(--chip);padding:.15rem .45rem;border-radius:999px}
+.version{font-size:.8rem;background:var(--chip);padding:.15rem .45rem;border-radius:999px;white-space:nowrap}
+.download{margin-top:auto;display:inline-block;background:var(--accent);color:var(--accent-fg);padding:.5rem .8rem;border-radius:6px;text-align:center;font-weight:600}
+.download:hover{text-decoration:none;filter:brightness(1.08)}
+.breadcrumb{font-size:.9rem;color:var(--muted);margin-bottom:1rem}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:1rem 1.25rem;margin:1.25rem 0}
+dl.meta-grid{display:grid;grid-template-columns:max-content 1fr;gap:.4rem 1rem;margin:.5rem 0}
+dl.meta-grid dt{color:var(--muted)}dl.meta-grid dd{margin:0}
+table{width:100%;border-collapse:collapse;font-size:.92rem}
+th,td{text-align:left;padding:.55rem .4rem;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--muted);font-weight:600}
+.table-scroll{overflow-x:auto}
+.deps{display:flex;gap:.4rem;flex-wrap:wrap;padding:0;margin:.5rem 0;list-style:none}
+.deps li{background:var(--chip);padding:.2rem .5rem;border-radius:6px;font-size:.85rem}
+.notice{border-left:3px solid var(--accent);padding:.25rem 0 .25rem .9rem;margin:1rem 0;color:var(--muted)}
+footer.site{border-top:1px solid var(--line);color:var(--muted);font-size:.85rem;padding:1.5rem 0 2.5rem}
+footer.site .wrap{display:flex;flex-direction:column;gap:.5rem}
+[hidden]{display:none!important}
+@media (max-width:40rem){h1{font-size:1.6rem}.toolbar input,.toolbar select{min-width:0;width:100%}}
+</style>
+</head>
+<body>
+<header class="site"><div class="wrap">
+  <a class="brand" href="index.html">CombineWRT 软件包</a>
+  <nav><a href="index.html">软件包</a><a href="install.html">安装</a><a href="catalog.json">catalog.json</a></nav>
+</div></header>
+<main><div class="wrap">
+<section class="hero">
+  <h1>CombineWRT 软件包</h1>
+  <p class="muted">为 ImmortalWrt 25.12.2（x86_64）构建的签名 apk 软件源。所有包都来自固定源码版本，索引使用 EC P-256 密钥签名。</p>
+  <div class="meta"><span>固件基线 25.12.2</span><span>架构 x86_64</span><span>构建 #43702446473</span><span>更新于 2026-11-15</span></div>
+  <div class="feed"><span class="muted">软件源</span><code id="feed-url">https://wuyuzaddd.github.io/combinewrt-packages/x86_64/packages.adb</code><button type="button" data-copy="feed-url">复制</button></div>
+</section>
+<section class="toolbar" aria-label="搜索与筛选">
+  <input id="q" type="search" placeholder="搜索软件包名称或描述" autocomplete="off" />
+  <select id="license" aria-label="按许可证筛选"><option value="">全部许可证</option><option value="Apache-2.0">Apache-2.0</option><option value="MIT">MIT</option><option value="__none">未声明许可</option></select>
+  <select id="source" aria-label="按来源筛选"><option value="">全部来源</option><option value="kiddin9/op-packages">kiddin9/op-packages</option></select>
+  <span id="count" class="muted">6 个软件包</span>
+</section>
+<p id="empty" class="notice" hidden>没有匹配的软件包，试试其它关键词。</p>
+<ul class="grid">
+<li class="card" data-name="luci-app-fwlive" data-description="Live firewall log table (firewall4/nft; iptables-tagged lines still classify) with filters" data-license="Apache-2.0" data-source="kiddin9/op-packages">
+  <div class="card-head"><h2><a href="packages/luci-app-fwlive.html">luci-app-fwlive</a></h2><span class="version">0.1.55-r74</span></div>
+  <p>Live firewall log table (firewall4/nft; iptables-tagged lines still classify) with filters</p>
+  <div class="chips"><span class="chip">Apache-2.0</span><span class="chip">81.9 KiB</span><span class="chip">1 个版本</span></div>
+  <a class="download" href="x86_64/luci-app-fwlive-0.1.55-r74.apk">下载 0.1.55-r74</a>
+</li>
+<li class="card" data-name="luci-app-store" data-description="luci-app-store is a ipk/apk store developed by LinkEase team" data-license="" data-source="kiddin9/op-packages">
+  <div class="card-head"><h2><a href="packages/luci-app-store.html">luci-app-store</a></h2><span class="version">0.2.1-r1</span></div>
+  <p>luci-app-store is a ipk/apk store developed by LinkEase team</p>
+  <div class="chips"><span class="chip">未声明许可</span><span class="chip">114 KiB</span><span class="chip">1 个版本</span></div>
+  <a class="download" href="x86_64/luci-app-store-0.2.1-r1.apk">下载 0.2.1-r1</a>
+</li>
+<li class="card" data-name="luci-app-substore" data-description="Native OpenWrt / ImmortalWrt LuCI application for managing airport subscriptions, parsing proxy nodes, filtering, deduplicating, merging and generating client subscription configs. Sub-Store like experience, without Docker or external services." data-license="" data-source="kiddin9/op-packages">
+  <div class="card-head"><h2><a href="packages/luci-app-substore.html">luci-app-substore</a></h2><span class="version">2.7.3-r25</span></div>
+  <p>Native OpenWrt / ImmortalWrt LuCI application for managing airport subscriptions, parsing proxy nodes, filtering, deduplicating, merging and generating client subscription configs. Sub-Store like experience, without Docker or external services.</p>
+  <div class="chips"><span class="chip">未声明许可</span><span class="chip">141 KiB</span><span class="chip">1 个版本</span></div>
+  <a class="download" href="x86_64/luci-app-substore-2.7.3-r25.apk">下载 2.7.3-r25</a>
+</li>
+<li class="card" data-name="luci-lib-taskd" data-description="Task library" data-license="" data-source="kiddin9/op-packages">
+  <div class="card-head"><h2><a href="packages/luci-lib-taskd.html">luci-lib-taskd</a></h2><span class="version">1.0.26-r2</span></div>
+  <p>Task library</p>
+  <div class="chips"><span class="chip">未声明许可</span><span class="chip">7.2 KiB</span><span class="chip">1 个版本</span></div>
+  <a class="download" href="x86_64/luci-lib-taskd-1.0.26-r2.apk">下载 1.0.26-r2</a>
+</li>
+<li class="card" data-name="luci-lib-xterm" data-description="Xterm.js library" data-license="MIT" data-source="kiddin9/op-packages">
+  <div class="card-head"><h2><a href="packages/luci-lib-xterm.html">luci-lib-xterm</a></h2><span class="version">4.18.0-r1</span></div>
+  <p>Xterm.js library</p>
+  <div class="chips"><span class="chip">MIT</span><span class="chip">77.1 KiB</span><span class="chip">1 个版本</span></div>
+  <a class="download" href="x86_64/luci-lib-xterm-4.18.0-r1.apk">下载 4.18.0-r1</a>
+</li>
+<li class="card" data-name="taskd" data-description="Simple Task Manager based on procd" data-license="" data-source="kiddin9/op-packages">
+  <div class="card-head"><h2><a href="packages/taskd.html">taskd</a></h2><span class="version">1.0.3-r1</span></div>
+  <p>Simple Task Manager based on procd</p>
+  <div class="chips"><span class="chip">未声明许可</span><span class="chip">2.2 KiB</span><span class="chip">1 个版本</span></div>
+  <a class="download" href="x86_64/taskd-1.0.3-r1.apk">下载 1.0.3-r1</a>
+</li>
+</ul>
+</div></main>
+<footer class="site"><div class="wrap">
+  <span>CombineWRT 社区构建，与 OpenWrt、ImmortalWrt、LuCI 项目没有隶属关系。</span>
+  <span>软件包版权归各自上游作者所有，来源与许可证见包详情页。软件源索引使用 EC P-256 密钥签名。</span>
+</div></footer>
+<script>
+(() => {
+  const q = document.getElementById("q");
+  const license = document.getElementById("license");
+  const source = document.getElementById("source");
+  const cards = Array.from(document.querySelectorAll(".card"));
+  const count = document.getElementById("count");
+  const empty = document.getElementById("empty");
+  if (!q || !license || !source || cards.length === 0) return;
+  const apply = () => {
+    const term = q.value.trim().toLowerCase();
+    let shown = 0;
+    for (const card of cards) {
+      const name = (card.dataset.name || "").toLowerCase();
+      const description = (card.dataset.description || "").toLowerCase();
+      const text = name + " " + description;
+      const licenseOk =
+        license.value === "" ||
+        (license.value === "__none"
+          ? (card.dataset.license || "") === ""
+          : card.dataset.license === license.value);
+      const ok =
+        (term === "" || text.includes(term)) &&
+        licenseOk &&
+        (source.value === "" || card.dataset.source === source.value);
+      card.hidden = !ok;
+      if (ok) shown += 1;
+    }
+    if (count) count.textContent = shown + " 个软件包";
+    if (empty) empty.hidden = shown !== 0;
+  };
+  for (const control of [q, license, source]) control.addEventListener("input", apply);
+  apply();
+})();
+
+(() => {
+  for (const button of document.querySelectorAll("[data-copy]")) {
+    button.addEventListener("click", async () => {
+      const target = document.getElementById(button.dataset.copy);
+      if (!target) return;
+      const text = target.textContent || "";
+      try {
+        await navigator.clipboard.writeText(text);
+        button.textContent = "已复制";
+      } catch {
+        const range = document.createRange();
+        range.selectNodeContents(target);
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
+        button.textContent = "请手动复制";
+      }
+    });
+  }
+})();
+</script>
+</body>
+</html>
