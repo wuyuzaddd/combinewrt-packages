@@ -73,10 +73,19 @@ const manifest = JSON.parse(readFileSync(args.manifest, "utf8"));
 const hide = JSON.parse(readFileSync(args.hide, "utf8"));
 const catalog = JSON.parse(readFileSync(args.catalog, "utf8"));
 
-const indexPath =
+const frozenIndexPath =
   args.channel === "staging" && args.frozenPath
     ? join(args.site, ...args.frozenPath.split("/").filter(Boolean), "packages.adb")
-    : join(args.site, "x86_64", "packages.adb");
+    : null;
+// The extension feed lives in its own tree with its own live pointer, so its
+// audit record must describe that index, not the V1 flat channel it never
+// touches.
+const extensionLiveIndex = args.channel === "live" && (args.frozenPath ?? "").startsWith("/extension/");
+const indexPath =
+  frozenIndexPath ??
+  (extensionLiveIndex
+    ? join(args.site, "extension", args.baseVersion, args.target, "packages.adb")
+    : join(args.site, "x86_64", "packages.adb"));
 const indexBytes = readFileSync(indexPath);
 const keyBytes = existsSync(args.key) ? readFileSync(args.key) : Buffer.alloc(0);
 
@@ -96,7 +105,11 @@ const audit = {
   keyFingerprint: keyBytes.length > 0 ? createHash("sha256").update(keyBytes).digest("hex") : "",
   promotedFromStaging: args.promotedFromStaging === "true",
   index: {
-    file: args.channel === "staging" && args.frozenPath ? `${args.frozenPath.replace(/^\//, "")}/packages.adb` : "x86_64/packages.adb",
+    file: frozenIndexPath
+      ? `${args.frozenPath.replace(/^\//, "")}/packages.adb`
+      : extensionLiveIndex
+        ? `extension/${args.baseVersion}/${args.target}/packages.adb`
+        : "x86_64/packages.adb",
     sha256: createHash("sha256").update(indexBytes).digest("hex"),
     fileSize: statSync(indexPath).size,
   },

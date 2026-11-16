@@ -213,6 +213,57 @@ function guardStaged(stagingDir: string): void {
   expect(readFileSync(join(stagingDir, "packages.adb"), "utf8")).toBe("index-b");
 }
 
+describe("publish-site extension kind", () => {
+  it("publishes the extension feed into its own frozen tree without touching the supplement channel", async () => {
+    const root = tempDir();
+    const state = join(root, "site");
+    mkdirSync(state, { recursive: true });
+
+    const supplement = await publish([
+      "--generated", generated(root, "supplement"),
+      "--state", state,
+      "--channel", "live",
+      "--base-version", "25.12.2",
+      "--target", "x86_64",
+      "--source-commit", COMMIT_A,
+      "--keep", "3",
+    ]);
+    expect(supplement.status).toBe(0);
+
+    const extension = await publish([
+      "--generated", generated(root, "extension"),
+      "--state", state,
+      "--channel", "live",
+      "--base-version", "25.12.2",
+      "--target", "x86_64",
+      "--source-commit", COMMIT_B,
+      "--keep", "3",
+      "--kind", "extension",
+    ]);
+
+    expect(extension.status).toBe(0);
+    expect(extension.stdout).toContain("kind: extension");
+    expect(extension.stdout).toContain(`frozen_path=/extension/25.12.2/x86_64/${COMMIT_B}`);
+    expect(extension.stdout).toContain("live_path=/extension/25.12.2/x86_64");
+
+    const extensionFrozen = join(state, "extension", "25.12.2", "x86_64", COMMIT_B, "packages.adb");
+    const extensionLive = join(state, "extension", "25.12.2", "x86_64", "packages.adb");
+    expect(readFileSync(extensionFrozen, "utf8")).toBe("index-extension");
+    expect(readFileSync(extensionLive, "utf8")).toBe("index-extension");
+
+    // The supplement pointer, its frozen index, the V1 flat channel and the
+    // top-level catalog record are byte-identical to the supplement publish.
+    expect(readFileSync(join(state, "supplement", "25.12.2", "x86_64", COMMIT_A, "packages.adb"), "utf8")).toBe(
+      "index-supplement",
+    );
+    expect(readFileSync(join(state, "supplement", "25.12.2", "x86_64", "packages.adb"), "utf8")).toBe(
+      "index-supplement",
+    );
+    expect(readFileSync(join(state, "x86_64", "packages.adb"), "utf8")).toBe("index-supplement");
+    expect(existsSync(join(state, "extension", "catalog.json"))).toBe(false);
+  });
+});
+
 describe("import-live-site", () => {
   it("seeds an empty site tree from the deployed feed", async () => {
     const live = tempDir();
