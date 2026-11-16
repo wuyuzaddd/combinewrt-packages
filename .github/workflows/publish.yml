@@ -68,6 +68,10 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
+    # The deploy job verifies the live site with this: a publish that only
+    # updates gh-pages but is never deployed must fail, not report success.
+    outputs:
+      frozen_path: ${{ steps.publish.outputs.frozen_path }}
     env:
       BUILD_RUN_ID: ${{ github.event.inputs.build_run_id || github.event.client_payload.build_run_id }}
       PUBLISH_MODE: ${{ github.event.inputs.publish_mode || github.event.client_payload.publish_mode || 'live' }}
@@ -321,6 +325,7 @@ jobs:
           fi
 
       - name: Lay out version-frozen paths
+        id: publish
         run: |
           set -euo pipefail
           node scripts/publish-site.mjs \
@@ -332,7 +337,9 @@ jobs:
             --target "$TARGET" \
             --source-commit "$SOURCE_COMMIT" \
             --keep 20 | tee "$RUNNER_TEMP/publish-site.log"
-          grep '^frozen_path=' "$RUNNER_TEMP/publish-site.log" | sed 's/^frozen_path=/FROZEN_PATH=/' >> "$GITHUB_ENV"
+          frozen_path=$(grep '^frozen_path=' "$RUNNER_TEMP/publish-site.log" | head -1 | cut -d= -f2-)
+          echo "FROZEN_PATH=$frozen_path" >> "$GITHUB_ENV"
+          echo "frozen_path=$frozen_path" >> "$GITHUB_OUTPUT"
           grep '^promoted_from_staging=' "$RUNNER_TEMP/publish-site.log" | sed 's/^promoted_from_staging=/PROMOTED_FROM_STAGING=/' >> "$GITHUB_ENV"
 
       - name: Write public audit record
@@ -404,3 +411,44 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4
+
+      # A green publish run must mean the version-frozen pointer is *served*.
+      # The 2026-11 review found publish runs reporting success while
+      # <live>/supplement/<base>/<target>/packages.adb still answered 404 on
+      # the Pages site (the deploy had been gated by the environment rules).
+      - name: Assert the live version-frozen pointer is served and signed
+        env:
+          FEED_PATH: ${{ needs.build.outputs.frozen_path }}
+        run: |
+          set -euo pipefail
+          case "$FEED_PATH" in
+            /supplement/*/packages.adb|/extension/*/packages.adb) ;;
+            *) echo "unexpected frozen path: '$FEED_PATH'" >&2; exit 1 ;;
+          esac
+          pointer="${LIVE_URL}${FEED_PATH}"
+          live="${LIVE_URL}$(echo "$FEED_PATH" | sed -E 's#/[0-9a-f]{40}/#/#' )"
+          echo "pointer: $pointer"
+          echo "live:    $live"
+          fetch() {
+            local url="$1" out="$2"
+            for attempt in 1 2 3 4 5 6 7 8 9 10; do
+              if curl -fsS --max-time 30 -o "$out" "$url"; then return 0; fi
+              echo "attempt $attempt: $url not served yet; retrying" >&2
+              sleep 10
+            done
+            return 1
+          }
+          fetch "$pointer" pointer.adb
+          fetch "$live" live.adb
+          sha256sum pointer.adb live.adb
+          [ "$(sha256sum pointer.adb | cut -d' ' -f1)" = "$(sha256sum live.adb | cut -d' ' -f1)" ]
+          # Verify the served index with the same public key the image installs.
+          curl -fsS --retry 3 -o /tmp/apk-tools-static.apk \
+            https://dl-cdn.alpinelinux.org/alpine/v3.23/main/x86_64/apk-tools-static-3.0.9-r0.apk
+          rm -rf /tmp/apk-tools && mkdir -p /tmp/apk-tools
+          tar -xzf /tmp/apk-tools-static.apk --ignore-zeros -C /tmp/apk-tools
+          key_dir="$RUNNER_TEMP/live-keys"
+          rm -rf "$key_dir" && mkdir -p "$key_dir"
+          curl -fsS --retry 3 -o "$key_dir/combinewrt-feed.pub.pem" "$LIVE_URL/keys/combinewrt-feed.pub.pem"
+          /tmp/apk-tools/sbin/apk.static verify --keys-dir "$key_dir" pointer.adb
+          echo "live version-frozen pointer served and verified: $pointer"
