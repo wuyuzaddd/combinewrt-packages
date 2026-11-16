@@ -421,14 +421,15 @@ jobs:
           FEED_PATH: ${{ needs.build.outputs.frozen_path }}
         run: |
           set -euo pipefail
+          # FEED_PATH is the frozen directory: /supplement/<base>/<target>/<sha>
           case "$FEED_PATH" in
-            /supplement/*/packages.adb|/extension/*/packages.adb) ;;
+            /supplement/*/*/*|/extension/*/*/*) ;;
             *) echo "unexpected frozen path: '$FEED_PATH'" >&2; exit 1 ;;
           esac
-          pointer="${LIVE_URL}${FEED_PATH}"
-          live="${LIVE_URL}$(echo "$FEED_PATH" | sed -E 's#/[0-9a-f]{40}/#/#' )"
+          frozen="${LIVE_URL}${FEED_PATH}/packages.adb"
+          pointer="${LIVE_URL}$(echo "$FEED_PATH" | sed -E 's#/[0-9a-f]{40}$##')/packages.adb"
           echo "pointer: $pointer"
-          echo "live:    $live"
+          echo "frozen:  $frozen"
           fetch() {
             local url="$1" out="$2"
             for attempt in 1 2 3 4 5 6 7 8 9 10; do
@@ -439,9 +440,9 @@ jobs:
             return 1
           }
           fetch "$pointer" pointer.adb
-          fetch "$live" live.adb
-          sha256sum pointer.adb live.adb
-          [ "$(sha256sum pointer.adb | cut -d' ' -f1)" = "$(sha256sum live.adb | cut -d' ' -f1)" ]
+          fetch "$frozen" frozen.adb
+          sha256sum pointer.adb frozen.adb
+          [ "$(sha256sum pointer.adb | cut -d' ' -f1)" = "$(sha256sum frozen.adb | cut -d' ' -f1)" ]
           # Verify the served index with the same public key the image installs.
           curl -fsS --retry 3 -o /tmp/apk-tools-static.apk \
             https://dl-cdn.alpinelinux.org/alpine/v3.23/main/x86_64/apk-tools-static-3.0.9-r0.apk
