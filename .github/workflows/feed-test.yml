@@ -12,6 +12,21 @@ on:
         description: combinewrt-build "packages" run id (empty = latest successful)
         required: false
         type: string
+      bundles_url:
+        description: Curated bundles JSON (empty = site repo main)
+        required: false
+        default: ""
+        type: string
+      base_version:
+        description: ImmortalWrt base version used for the bundle indexes
+        required: false
+        default: "25.12.2"
+        type: string
+      target:
+        description: Feed target used for the bundle indexes
+        required: false
+        default: "x86/64"
+        type: string
 
 permissions:
   contents: read
@@ -21,6 +36,51 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  bundles:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      BUNDLES_URL: ${{ inputs.bundles_url || 'https://raw.githubusercontent.com/wuyuzaddd/combinewrt/main/config/extension/bundles.json' }}
+      BASE_VERSION: ${{ inputs.base_version || '25.12.2' }}
+      TARGET: ${{ inputs.target || 'x86/64' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Download apk-tools 3.0.9
+        run: |
+          set -euo pipefail
+          curl -fsSL --retry 3 -o "$RUNNER_TEMP/apk-tools.apk" \
+            https://dl-cdn.alpinelinux.org/alpine/v3.23/main/x86_64/apk-tools-static-3.0.9-r0.apk
+          mkdir -p "$RUNNER_TEMP/apkstatic"
+          tar -xzf "$RUNNER_TEMP/apk-tools.apk" -C "$RUNNER_TEMP/apkstatic" --ignore-zeros
+          "$RUNNER_TEMP/apkstatic/sbin/apk.static" --version
+
+      - name: Real bundle dependency/installability closure
+        run: |
+          set -euo pipefail
+          npx tsx scripts/test-bundle-installability.ts \
+            --bundles "$BUNDLES_URL" \
+            --base-version "$BASE_VERSION" \
+            --target "$TARGET" \
+            --apk-tool "$RUNNER_TEMP/apkstatic/sbin/apk.static" \
+            --work-dir "$RUNNER_TEMP/bundle-installability" \
+            --out bundle-installability.json
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bundle-installability
+          path: bundle-installability.json
+          if-no-files-found: warn
+          retention-days: 7
+
   install:
     runs-on: ubuntu-latest
     timeout-minutes: 30
