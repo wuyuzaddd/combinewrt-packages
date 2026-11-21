@@ -273,4 +273,14 @@ grep -qiE 'checksum|BAD signature|verification failed|invalid|corrupt' "$WORK_DI
   || die "tampered apk failed without a checksum/signature error"
 log "tampered apk rejected (exit $status)"
 
+# --- positive: the packages must uninstall cleanly -----------------------
+log "removing ${#PACKAGES[@]} packages (clean uninstall)"
+apk_guest del "${PACKAGES[@]}" >"$WORK_DIR/apk-del.log" 2>&1 || {
+  cat "$WORK_DIR/apk-del.log" >&2
+  die "apk del failed"
+}
+leftovers="$(apk_guest list --installed 2>/dev/null | grep -E "^($(IFS='|'; echo "${PACKAGES[*]}"))-" || true)"
+[ -z "$leftovers" ] || die "apk del left packages installed: $leftovers"
+log "clean uninstall verified"
+
 log "PASS"
