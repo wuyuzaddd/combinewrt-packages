@@ -72,6 +72,7 @@ jobs:
     # updates gh-pages but is never deployed must fail, not report success.
     outputs:
       frozen_path: ${{ steps.publish.outputs.frozen_path }}
+      publish_mode: ${{ steps.publish.outputs.publish_mode }}
     env:
       BUILD_RUN_ID: ${{ github.event.inputs.build_run_id || github.event.client_payload.build_run_id }}
       PUBLISH_MODE: ${{ github.event.inputs.publish_mode || github.event.client_payload.publish_mode || 'live' }}
@@ -343,6 +344,7 @@ jobs:
           frozen_path=$(grep '^frozen_path=' "$RUNNER_TEMP/publish-site.log" | head -1 | cut -d= -f2-)
           echo "FROZEN_PATH=$frozen_path" >> "$GITHUB_ENV"
           echo "frozen_path=$frozen_path" >> "$GITHUB_OUTPUT"
+          echo "publish_mode=$PUBLISH_MODE" >> "$GITHUB_OUTPUT"
           grep '^promoted_from_staging=' "$RUNNER_TEMP/publish-site.log" | sed 's/^promoted_from_staging=/PROMOTED_FROM_STAGING=/' >> "$GITHUB_ENV"
 
       - name: Write public audit record
@@ -407,6 +409,10 @@ jobs:
 
   deploy:
     needs: build
+    # A staging run deliberately leaves the live pointer and the served site
+    # alone, so the "live pointer is served and signed" assertion cannot hold
+    # there; the staged index inside the artifact is the deliverable instead.
+    if: needs.build.outputs.publish_mode == 'live'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
