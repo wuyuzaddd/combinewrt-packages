@@ -1,17 +1,25 @@
 name: feed-client-test
 
 # Real apk 3.0.9 client test against a throwaway-signed copy of a build
-# artifact: installs all six packages in a throwaway ImmortalWrt 25.12.2
-# rootfs, then proves a tampered index, a rogue-signed index and a tampered
-# apk are all rejected. Uses no production signing key.
+# artifact: installs every package the artifact carries in a throwaway
+# ImmortalWrt 25.12.2 rootfs, then proves a tampered index, a rogue-signed
+# index and a tampered apk are all rejected. Uses no production signing key.
 
 on:
   workflow_dispatch:
     inputs:
       build_run_id:
-        description: combinewrt-build "packages" run id (empty = latest successful)
+        description: combinewrt-build run id (empty = latest successful run of that workflow)
         required: false
         type: string
+      feed_kind:
+        description: Which build workflow/artifact to test
+        required: false
+        default: supplement
+        type: choice
+        options:
+          - supplement
+          - extension
       bundles_url:
         description: Curated bundles JSON (empty = site repo main)
         required: false
@@ -87,6 +95,7 @@ jobs:
     env:
       GH_TOKEN: ${{ secrets.PACKAGES_TOKEN }}
       INPUT_RUN_ID: ${{ inputs.build_run_id }}
+      FEED_KIND: ${{ inputs.feed_kind || 'supplement' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -101,9 +110,13 @@ jobs:
         run: |
           set -euo pipefail
           run_id="$INPUT_RUN_ID"
+          case "$FEED_KIND" in
+            extension) workflow="extension" ;;
+            *) workflow="packages" ;;
+          esac
           if [ -z "$run_id" ]; then
             run_id="$(gh run list --repo wuyuzaddd/combinewrt-build \
-              --workflow packages --status success --limit 1 \
+              --workflow "$workflow" --status success --limit 1 \
               --json databaseId --jq '.[0].databaseId // empty')"
           fi
           case "$run_id" in
@@ -117,9 +130,17 @@ jobs:
         run: |
           set -euo pipefail
           rm -rf artifact
+          case "$FEED_KIND" in
+            extension) artifact_name="extension-build" ;;
+            *) artifact_name="packages-build" ;;
+          esac
           gh run download "$BUILD_RUN_ID" --repo wuyuzaddd/combinewrt-build \
-            --name packages-build --dir artifact
+            --name "$artifact_name" --dir artifact
           test -f artifact/manifest.json
+          node -e '
+            const m = require("./artifact/manifest.json");
+            console.log(`artifact feed: ${m.feed ?? "supplement"} (${m.entries.length} entries)`);
+          '
 
       - name: Generate site from artifact
         run: |

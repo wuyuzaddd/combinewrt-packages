@@ -148,6 +148,13 @@ log(`apk indexes ready (${repositories.length} repositories)`);
 const failures = [];
 const results = [];
 for (const bundle of bundles) {
+  if (bundle.publicAllowed === false) {
+    // Private bundles (publicAllowed: false) are deliberately absent from the
+    // published feed: their packages carry licences we may not redistribute, so
+    // "installable from the public index" is not a property they can have.
+    results.push({ bundle: bundle.id, target, status: "skipped", reason: "private bundle (publicAllowed: false)" });
+    continue;
+  }
   if (!Array.isArray(bundle.targets) || !bundle.targets.includes(target)) {
     results.push({ bundle: bundle.id, target, status: "skipped", reason: "target not declared" });
     continue;

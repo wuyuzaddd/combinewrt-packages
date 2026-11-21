@@ -3,7 +3,8 @@
 #
 # Takes a generated, unsigned Pages site directory, signs its index with a
 # throwaway EC P-256 key, serves it over HTTP, boots a throwaway ImmortalWrt
-# 25.12.2 x86_64 rootfs with apk-tools 3.0.9 and installs all six packages.
+# 25.12.2 x86_64 rootfs with apk-tools 3.0.9 and installs every package the
+# generated catalog lists (supplement or extension channel alike).
 # Then it proves that a tampered index and a tampered apk are rejected.
 #
 # Usage: scripts/feed-client-test.sh --site site [--work-dir DIR] [--port 19090]
@@ -17,7 +18,9 @@ WORK_DIR=""
 PORT=19090
 APK_TOOL=""
 ROOTFS_TAR=""
-PACKAGES=(luci-lib-xterm taskd luci-lib-taskd luci-app-store luci-app-substore luci-app-fwlive)
+# Derived from the generated catalog, so the test covers whatever channel and
+# package set the artifact carries instead of a hardcoded supplement list.
+PACKAGES=()
 ROOTFS_URL="https://downloads.immortalwrt.org/releases/25.12.2/targets/x86/64/immortalwrt-25.12.2-x86-64-rootfs.tar.gz"
 APK_URL="https://dl-cdn.alpinelinux.org/alpine/v3.23/main/x86_64/apk-tools-static-3.0.9-r0.apk"
 
@@ -37,6 +40,16 @@ done
 [ -n "$SITE" ] || die "--site is required"
 [ -f "$SITE/catalog.json" ] || die "$SITE/catalog.json not found"
 [ -d "$SITE/x86_64" ] || die "$SITE/x86_64 not found"
+
+mapfile -t PACKAGES < <(python3 -c '
+import json, sys
+catalog = json.load(open(sys.argv[1], encoding="utf-8"))
+for pkg in catalog.get("packages", []):
+    name = pkg.get("name")
+    if name:
+        print(name)
+' "$SITE/catalog.json")
+[ "${#PACKAGES[@]}" -gt 0 ] || die "catalog.json lists no packages"
 
 if [ -z "$WORK_DIR" ]; then
   WORK_DIR="$(mktemp -d)"
@@ -162,7 +175,7 @@ apk_guest update 2>&1 | tee "$WORK_DIR/apk-update.log"
 ! grep -qiE 'untrusted|BAD signature|verification failed|invalid signature' "$WORK_DIR/apk-update.log" \
   || die "apk update rejected the signed index"
 
-log "installing six packages"
+log "installing ${#PACKAGES[@]} packages: ${PACKAGES[*]}"
 apk_guest add "${PACKAGES[@]}" 2>&1 | tee "$WORK_DIR/apk-add.log"
 
 node -e '
@@ -180,7 +193,7 @@ while read -r name version; do
     *) die "expected $name-$version installed, got: ${listing:-<not installed>}" ;;
   esac
 done < "$WORK_DIR/expected-versions.txt"
-log "all six packages installed at catalog versions"
+log "all ${#PACKAGES[@]} packages installed at catalog versions"
 
 # --- negative: tampered index must be rejected ----------------------------
 cp "$FEED/x86_64/packages.adb" "$WORK_DIR/packages.adb.orig"
