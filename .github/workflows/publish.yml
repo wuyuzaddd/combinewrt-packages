@@ -76,7 +76,10 @@ jobs:
       BUILD_RUN_ID: ${{ github.event.inputs.build_run_id || github.event.client_payload.build_run_id }}
       PUBLISH_MODE: ${{ github.event.inputs.publish_mode || github.event.client_payload.publish_mode || 'live' }}
       ALLOW_PARTIAL: ${{ github.event.inputs.allow_partial || 'false' }}
-      FEED_KIND: ${{ github.event.inputs.feed_kind || github.event.client_payload.feed_kind || 'supplement' }}
+      # `repository_dispatch` carries its event type in github.event.action, so
+      # an extension build is recognised without the caller having to repeat the
+      # feed kind (older dispatchers only send event_type=extension-built).
+      FEED_KIND: ${{ github.event.inputs.feed_kind || github.event.client_payload.feed_kind || (github.event.action == 'extension-built' && 'extension') || 'supplement' }}
       REQUESTED_BASE_VERSION: ${{ github.event.client_payload.base_version || '' }}
       REQUESTED_SOURCE_COMMIT: ${{ github.event.client_payload.source_commit || '' }}
       REQUESTED_FEED_LOCK: ${{ github.event.client_payload.feed_lock || '' }}
