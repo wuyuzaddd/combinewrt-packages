@@ -265,6 +265,11 @@ with open(path, "r+b") as f:
 PY
 touch -d '2030-01-01 00:00:00' "$VICTIM_FILE"
 apk_guest del "$VICTIM" >/dev/null 2>&1 || true
+# apk keeps the downloaded package in /var/cache/apk, so a reinstall would use
+# the good cached copy and never look at the tampered file. Flush it first, or
+# this negative test silently depends on the cache state.
+"${SUDO[@]}" rm -rf "$ROOT/var/cache/apk"
+"${SUDO[@]}" mkdir -p "$ROOT/var/cache/apk"
 set +e
 apk_guest add "$VICTIM" >"$WORK_DIR/tampered-apk.log" 2>&1
 status=$?
