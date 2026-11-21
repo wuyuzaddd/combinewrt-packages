@@ -243,8 +243,11 @@ grep -qiE 'untrusted|BAD signature|verification failed' "$WORK_DIR/rogue-index.l
 log "rogue-signed index rejected (exit $status)"
 
 # --- negative: tampered apk must be rejected ------------------------------
-VICTIM="luci-app-store"
-VICTIM_VERSION="$(awk -v n="$VICTIM" '$1 == n { print $2 }' "$WORK_DIR/expected-versions.txt")"
+# Any package the artifact actually ships will do; picking by name broke as soon
+# as the feed stopped carrying the old supplement set.
+VICTIM="$(awk 'NF >= 2 { print $1; exit }' "$WORK_DIR/expected-versions.txt")"
+[ -n "$VICTIM" ] || die "expected-versions.txt lists no package to tamper with"
+VICTIM_VERSION="$(awk -v n="$VICTIM" '$1 == n { print $2; exit }' "$WORK_DIR/expected-versions.txt")"
 [ -n "$VICTIM_VERSION" ] || die "no version for $VICTIM"
 VICTIM_FILE="$FEED/x86_64/${VICTIM}-${VICTIM_VERSION}.apk"
 [ -f "$VICTIM_FILE" ] || die "missing $VICTIM_FILE"
