@@ -202,7 +202,10 @@ import sys
 path = sys.argv[1]
 with open(path, "r+b") as f:
     data = bytearray(f.read())
-    data[-1] ^= 0xFF
+    # Flip a byte in the middle of the payload. The trailing byte of an ADB index
+    # is padding for some package counts, so flipping it left the signature
+    # intact and apk accepted the tampered index.
+    data[len(data) // 2] ^= 0xFF
     f.seek(0)
     f.write(data)
 PY
@@ -259,7 +262,9 @@ with open(path, "r+b") as f:
     data = bytearray(f.read())
     if len(data) < 256:
         raise SystemExit("apk too small to tamper")
-    data[128] ^= 0xFF
+    # Middle of the file: definitely inside the signed payload rather than the
+    # leading signature block.
+    data[len(data) // 2] ^= 0xFF
     f.seek(0)
     f.write(data)
 PY
