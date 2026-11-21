@@ -295,8 +295,11 @@ set -e
 cp "$WORK_DIR/victim.apk.orig" "$VICTIM_FILE"
 touch -d '2030-01-01 00:00:00' "$VICTIM_FILE"
 [ "$status" -ne 0 ] || die "apk add accepted a tampered package"
-grep -qiE 'checksum|BAD signature|verification failed|invalid|corrupt' "$WORK_DIR/tampered-apk.log" \
-  || die "tampered apk failed without a checksum/signature error"
+if ! grep -qiE 'checksum|hash|digest|integrity|mismatch|BAD signature|verification failed|invalid|corrupt' \
+  "$WORK_DIR/tampered-apk.log"; then
+  cat "$WORK_DIR/tampered-apk.log" >&2
+  die "tampered apk failed without a checksum/signature error"
+fi
 log "tampered apk rejected (exit $status)"
 
 log "PASS"
