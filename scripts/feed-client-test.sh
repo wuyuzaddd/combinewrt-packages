@@ -195,6 +195,19 @@ while read -r name version; do
 done < "$WORK_DIR/expected-versions.txt"
 log "all ${#PACKAGES[@]} packages installed at catalog versions"
 
+# --- positive: the packages must uninstall cleanly -----------------------
+# Done before the negative tests: with nothing installed, `apk add <victim>`
+# really has to fetch and verify the served apk, and `apk del` cannot be blocked
+# by another installed package depending on the victim.
+log "removing ${#PACKAGES[@]} packages (clean uninstall)"
+apk_guest del "${PACKAGES[@]}" >"$WORK_DIR/apk-del.log" 2>&1 || {
+  cat "$WORK_DIR/apk-del.log" >&2
+  die "apk del failed"
+}
+leftovers="$(apk_guest list --installed 2>/dev/null | grep -E "^($(IFS='|'; echo "${PACKAGES[*]}"))-" || true)"
+[ -z "$leftovers" ] || die "apk del left packages installed: $leftovers"
+log "clean uninstall verified"
+
 # --- negative: tampered index must be rejected ----------------------------
 cp "$FEED/x86_64/packages.adb" "$WORK_DIR/packages.adb.orig"
 python3 - "$FEED/x86_64/packages.adb" <<'PY'
@@ -269,10 +282,10 @@ with open(path, "r+b") as f:
     f.write(data)
 PY
 touch -d '2030-01-01 00:00:00' "$VICTIM_FILE"
-apk_guest del "$VICTIM" >/dev/null 2>&1 || true
-# apk keeps the downloaded package in /var/cache/apk, so a reinstall would use
-# the good cached copy and never look at the tampered file. Flush it first, or
-# this negative test silently depends on the cache state.
+# Nothing is installed at this point (see the clean-uninstall check above), so
+# apk has to fetch the served file instead of short-circuiting.
+# apk keeps downloaded packages in /var/cache/apk; flush it so this test cannot
+# silently pass on a cached, untampered copy.
 "${SUDO[@]}" rm -rf "$ROOT/var/cache/apk"
 "${SUDO[@]}" mkdir -p "$ROOT/var/cache/apk"
 set +e
@@ -285,15 +298,5 @@ touch -d '2030-01-01 00:00:00' "$VICTIM_FILE"
 grep -qiE 'checksum|BAD signature|verification failed|invalid|corrupt' "$WORK_DIR/tampered-apk.log" \
   || die "tampered apk failed without a checksum/signature error"
 log "tampered apk rejected (exit $status)"
-
-# --- positive: the packages must uninstall cleanly -----------------------
-log "removing ${#PACKAGES[@]} packages (clean uninstall)"
-apk_guest del "${PACKAGES[@]}" >"$WORK_DIR/apk-del.log" 2>&1 || {
-  cat "$WORK_DIR/apk-del.log" >&2
-  die "apk del failed"
-}
-leftovers="$(apk_guest list --installed 2>/dev/null | grep -E "^($(IFS='|'; echo "${PACKAGES[*]}"))-" || true)"
-[ -z "$leftovers" ] || die "apk del left packages installed: $leftovers"
-log "clean uninstall verified"
 
 log "PASS"
