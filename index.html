@@ -64,14 +64,14 @@ footer.site .wrap{display:flex;flex-direction:column;gap:.5rem}
 <section class="hero">
   <h1>CombineWRT 软件包</h1>
   <p class="muted">为 ImmortalWrt 25.12.2（x86_64）构建的签名 apk 软件源。所有包都来自固定源码版本，索引使用 EC P-256 密钥签名。</p>
-  <div class="meta"><span>固件基线 25.12.2</span><span>架构 x86_64</span><span>构建 #44900236770</span><span>更新于 2026-11-21</span></div>
+  <div class="meta"><span>固件基线 25.12.2</span><span>架构 x86_64</span><span>构建 #45016529071</span><span>更新于 2026-11-22</span></div>
   <div class="feed"><span class="muted">软件源</span><code id="feed-url">https://wuyuzaddd.github.io/combinewrt-packages/x86_64/packages.adb</code><button type="button" data-copy="feed-url">复制</button></div>
 </section>
 <section class="toolbar" aria-label="搜索与筛选">
   <input id="q" type="search" placeholder="搜索软件包名称或描述" autocomplete="off" />
-  <select id="license" aria-label="按许可证筛选"><option value="">全部许可证</option><option value="Apache-2.0">Apache-2.0</option><option value="__none">未声明许可</option></select>
+  <select id="license" aria-label="按许可证筛选"><option value="">全部许可证</option><option value="Apache-2.0">Apache-2.0</option><option value="MIT">MIT</option><option value="__none">未声明许可</option></select>
   <select id="source" aria-label="按来源筛选"><option value="">全部来源</option><option value="kiddin9/op-packages">kiddin9/op-packages</option></select>
-  <span id="count" class="muted">2 个软件包</span>
+  <span id="count" class="muted">6 个软件包</span>
 </section>
 <p id="empty" class="notice" hidden>没有匹配的软件包，试试其它关键词。</p>
 <ul class="grid">
@@ -81,11 +81,35 @@ footer.site .wrap{display:flex;flex-direction:column;gap:.5rem}
   <div class="chips"><span class="chip">Apache-2.0</span><span class="chip">81.9 KiB</span><span class="chip">1 个版本</span></div>
   <a class="download" href="x86_64/luci-app-fwlive-0.1.55-r74.apk">下载 0.1.55-r74</a>
 </li>
+<li class="card" data-name="luci-app-store" data-description="luci-app-store is a ipk/apk store developed by LinkEase team" data-license="" data-source="kiddin9/op-packages">
+  <div class="card-head"><h2><a href="packages/luci-app-store.html">luci-app-store</a></h2><span class="version">0.2.1-r1</span></div>
+  <p>luci-app-store is a ipk/apk store developed by LinkEase team</p>
+  <div class="chips"><span class="chip">未声明许可</span><span class="chip">114 KiB</span><span class="chip">1 个版本</span></div>
+  <a class="download" href="x86_64/luci-app-store-0.2.1-r1.apk">下载 0.2.1-r1</a>
+</li>
 <li class="card" data-name="luci-app-substore" data-description="Native OpenWrt / ImmortalWrt LuCI application for managing airport subscriptions, parsing proxy nodes, filtering, deduplicating, merging and generating client subscription configs. Sub-Store like experience, without Docker or external services." data-license="" data-source="kiddin9/op-packages">
   <div class="card-head"><h2><a href="packages/luci-app-substore.html">luci-app-substore</a></h2><span class="version">2.7.3-r25</span></div>
   <p>Native OpenWrt / ImmortalWrt LuCI application for managing airport subscriptions, parsing proxy nodes, filtering, deduplicating, merging and generating client subscription configs. Sub-Store like experience, without Docker or external services.</p>
   <div class="chips"><span class="chip">未声明许可</span><span class="chip">141 KiB</span><span class="chip">1 个版本</span></div>
   <a class="download" href="x86_64/luci-app-substore-2.7.3-r25.apk">下载 2.7.3-r25</a>
+</li>
+<li class="card" data-name="luci-lib-taskd" data-description="Task library" data-license="" data-source="kiddin9/op-packages">
+  <div class="card-head"><h2><a href="packages/luci-lib-taskd.html">luci-lib-taskd</a></h2><span class="version">1.0.26-r2</span></div>
+  <p>Task library</p>
+  <div class="chips"><span class="chip">未声明许可</span><span class="chip">7.2 KiB</span><span class="chip">1 个版本</span></div>
+  <a class="download" href="x86_64/luci-lib-taskd-1.0.26-r2.apk">下载 1.0.26-r2</a>
+</li>
+<li class="card" data-name="luci-lib-xterm" data-description="Xterm.js library" data-license="MIT" data-source="kiddin9/op-packages">
+  <div class="card-head"><h2><a href="packages/luci-lib-xterm.html">luci-lib-xterm</a></h2><span class="version">4.18.0-r1</span></div>
+  <p>Xterm.js library</p>
+  <div class="chips"><span class="chip">MIT</span><span class="chip">77.1 KiB</span><span class="chip">1 个版本</span></div>
+  <a class="download" href="x86_64/luci-lib-xterm-4.18.0-r1.apk">下载 4.18.0-r1</a>
+</li>
+<li class="card" data-name="taskd" data-description="Simple Task Manager based on procd" data-license="" data-source="kiddin9/op-packages">
+  <div class="card-head"><h2><a href="packages/taskd.html">taskd</a></h2><span class="version">1.0.3-r1</span></div>
+  <p>Simple Task Manager based on procd</p>
+  <div class="chips"><span class="chip">未声明许可</span><span class="chip">2.2 KiB</span><span class="chip">1 个版本</span></div>
+  <a class="download" href="x86_64/taskd-1.0.3-r1.apk">下载 1.0.3-r1</a>
 </li>
 </ul>
 </div></main>
