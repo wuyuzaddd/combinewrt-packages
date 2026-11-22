@@ -35,6 +35,11 @@ function generated(root: string, marker: string): string {
   writeFileSync(join(dir, "x86_64", "taskd-1.0-r1.apk"), `apk-${marker}`);
   writeFileSync(join(dir, "catalog.json"), JSON.stringify({ marker }));
   writeFileSync(join(dir, "index.html"), `<html>${marker}</html>`);
+  writeFileSync(join(dir, "install.html"), `<html>install-${marker}</html>`);
+  writeFileSync(join(dir, "404.html"), `<html>404-${marker}</html>`);
+  writeFileSync(join(dir, ".nojekyll"), "");
+  mkdirSync(join(dir, "packages"), { recursive: true });
+  writeFileSync(join(dir, "packages", "taskd.html"), `<html>page-${marker}</html>`);
   writeFileSync(join(dir, "hide.json"), "[]");
   return dir;
 }
@@ -85,6 +90,12 @@ describe("publish-site", () => {
     expect(readFileSync(join(state, "catalog.json"), "utf8")).toBe('{"marker":"a"}');
     expect(existsSync(join(state, "keys", "combinewrt-feed.pub.pem"))).toBe(true);
     expect(existsSync(join(state, "hide.json"))).toBe(true);
+    // The index links to the install guide and to one page per package; both
+    // used to 404 because only index.html was copied into the site root.
+    expect(readFileSync(join(state, "install.html"), "utf8")).toBe("<html>install-a</html>");
+    expect(readFileSync(join(state, "404.html"), "utf8")).toBe("<html>404-a</html>");
+    expect(readFileSync(join(state, "packages", "taskd.html"), "utf8")).toBe("<html>page-a</html>");
+    expect(existsSync(join(state, ".nojekyll"))).toBe(true);
   });
 
   it("stages an index without touching the live pointer or the flat channel", async () => {

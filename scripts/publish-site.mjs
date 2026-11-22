@@ -159,6 +159,12 @@ export function publishSite(options) {
 
       copyFileIfPresent(join(options.generated, "catalog.json"), join(options.state, "catalog.json"));
       copyFileIfPresent(join(options.generated, "index.html"), join(options.state, "index.html"));
+      // The index links to the install guide and to one page per package; only
+      // index.html used to be published, so both of those 404ed on Pages.
+      copyFileIfPresent(join(options.generated, "install.html"), join(options.state, "install.html"));
+      copyFileIfPresent(join(options.generated, "404.html"), join(options.state, "404.html"));
+      const pageDir = join(options.generated, "packages");
+      if (existsSync(pageDir)) copyDir(pageDir, join(options.state, "packages"));
       copyFileIfPresent(join(options.generated, "hide.json"), join(options.state, "hide.json"));
       copyFileIfPresent(
         join(process.cwd(), "keys", "combinewrt-feed.pub.pem"),
@@ -166,6 +172,10 @@ export function publishSite(options) {
       );
     }
   }
+
+  // GitHub Pages must serve the generated files verbatim; the marker has to be
+  // present whichever channel published last.
+  copyFileIfPresent(join(options.generated, ".nojekyll"), join(options.state, ".nojekyll"));
 
   // Write the frozen copy last: copyDir replaces its destination directory and
   // the live pointer directory is the parent of the frozen path.
