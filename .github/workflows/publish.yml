@@ -51,6 +51,11 @@ on:
         required: false
         type: boolean
         default: false
+      allow_shrink:
+        description: Allow the new index to drop packages the published one still serves
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -77,6 +82,7 @@ jobs:
       BUILD_RUN_ID: ${{ github.event.inputs.build_run_id || github.event.client_payload.build_run_id }}
       PUBLISH_MODE: ${{ github.event.inputs.publish_mode || github.event.client_payload.publish_mode || 'live' }}
       ALLOW_PARTIAL: ${{ github.event.inputs.allow_partial || 'false' }}
+      ALLOW_SHRINK: ${{ github.event.inputs.allow_shrink || 'false' }}
       # `repository_dispatch` carries its event type in github.event.action, so
       # an extension build is recognised without the caller having to repeat the
       # feed kind (older dispatchers only send event_type=extension-built).
@@ -305,6 +311,33 @@ jobs:
           cp keys/combinewrt-feed.pub.pem gen/keys/combinewrt-feed.pub.pem
           cp hide.json gen/hide.json
           ls -l gen gen/keys gen/x86_64
+
+      - name: Assert the published feed keeps every package
+        # 2026-11-22: shrinking a channel's package set silently removed four
+        # names from /supplement/.../packages.adb, and the devices that already
+        # use that repository line lost them. A publish may add packages, but it
+        # must not drop one without an explicit allow_shrink.
+        run: |
+          set -euo pipefail
+          published="$LIVE_URL/$FEED_PATH/packages.adb"
+          if ! curl -fsS --max-time 30 -o "$RUNNER_TEMP/published.adb" "$published"; then
+            echo "no published index yet at $published (first publish for this channel)"; exit 0
+          fi
+          "$APK_TOOL" adbdump --format json "$RUNNER_TEMP/published.adb" > "$RUNNER_TEMP/published.json"
+          "$APK_TOOL" adbdump --format json gen/x86_64/packages.adb > "$RUNNER_TEMP/next.json"
+          node - <<'NODE'
+          const fs = require("node:fs");
+          const names = (file) => new Set(JSON.parse(fs.readFileSync(file, "utf8")).packages.map((p) => p.name));
+          const published = names(process.env.RUNNER_TEMP + "/published.json");
+          const next = names(process.env.RUNNER_TEMP + "/next.json");
+          const dropped = [...published].filter((name) => !next.has(name)).sort();
+          console.log(`published: ${published.size} packages, next: ${next.size} packages`);
+          if (dropped.length === 0) { console.log("no package dropped"); process.exit(0); }
+          console.error(`this publish would drop: ${dropped.join(", ")}`);
+          if (process.env.ALLOW_SHRINK === "true") { console.log("allow_shrink=true, continuing"); process.exit(0); }
+          console.error("refusing to shrink the feed; re-run with allow_shrink=true if that is intended");
+          process.exit(1);
+          NODE
 
       - name: Verify signed index against catalog and files
         run: |
