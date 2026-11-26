@@ -23,7 +23,10 @@ name: publish
 # publish_mode=live (the staging -> live promotion path).
 on:
   repository_dispatch:
-    types: [packages-built, extension-built]
+    # `supplement-publish` is what the site sends when it promotes a staged
+    # build to live. GitHub answers 204 for an unhandled event type, so a
+    # missing entry here looked like a successful promotion that did nothing.
+    types: [packages-built, extension-built, supplement-publish]
   workflow_dispatch:
     inputs:
       build_run_id:
