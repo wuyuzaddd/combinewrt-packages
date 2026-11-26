@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-11-26T12:45:50.634Z",
+  "generatedAt": "2026-11-26T19:07:52.087Z",
   "baseVersion": "25.12.2",
   "arch": "x86_64",
-  "buildRunId": 45822400920,
+  "buildRunId": 45881055825,
   "feedUrl": "https://wuyuzaddd.github.io/combinewrt-packages/x86_64/packages.adb",
   "packages": [
     {
@@ -11,7 +11,7 @@
       "description": "Live firewall log table (firewall4/nft; iptables-tagged lines still classify) with filters",
       "license": "Apache-2.0",
       "sourceRepo": "kiddin9/op-packages",
-      "sourceCommit": "9200392417affa79f23eb0e3ddfea626cc8db05a",
+      "sourceCommit": "a6f825bb62816ca95ab3676fdf5a68582f272faa",
       "sourcePath": "luci-app-fwlive",
       "latest": {
         "name": "luci-app-fwlive",
@@ -26,13 +26,13 @@
         ],
         "license": "Apache-2.0",
         "installedSize": 318848,
-        "fileSize": 83983,
-        "sha256": "84691df49ad52bd5a2ba4fcf74255bb21dc69ede9dc0d53481fdc07636d9d124",
+        "fileSize": 83986,
+        "sha256": "0db772d3dccdfe7493110128aa12530eb80a354476fa0024ca23531c47345844",
         "sourceRepo": "kiddin9/op-packages",
-        "sourceCommit": "9200392417affa79f23eb0e3ddfea626cc8db05a",
+        "sourceCommit": "a6f825bb62816ca95ab3676fdf5a68582f272faa",
         "sourcePath": "luci-app-fwlive",
         "asset": "luci-app-fwlive-0.1.55-r74.apk",
-        "publishedAt": "2026-11-26T12:45:50.634Z"
+        "publishedAt": "2026-11-26T19:07:52.087Z"
       },
       "previous": null,
       "versions": [
@@ -49,13 +49,13 @@
           ],
           "license": "Apache-2.0",
           "installedSize": 318848,
-          "fileSize": 83983,
-          "sha256": "84691df49ad52bd5a2ba4fcf74255bb21dc69ede9dc0d53481fdc07636d9d124",
+          "fileSize": 83986,
+          "sha256": "0db772d3dccdfe7493110128aa12530eb80a354476fa0024ca23531c47345844",
           "sourceRepo": "kiddin9/op-packages",
-          "sourceCommit": "9200392417affa79f23eb0e3ddfea626cc8db05a",
+          "sourceCommit": "a6f825bb62816ca95ab3676fdf5a68582f272faa",
           "sourcePath": "luci-app-fwlive",
           "asset": "luci-app-fwlive-0.1.55-r74.apk",
-          "publishedAt": "2026-11-26T12:45:50.634Z"
+          "publishedAt": "2026-11-26T19:07:52.087Z"
         }
       ]
     },
@@ -64,7 +64,7 @@
       "description": "luci-app-store is a ipk/apk store developed by LinkEase team",
       "license": "",
       "sourceRepo": "kiddin9/op-packages",
-      "sourceCommit": "9200392417affa79f23eb0e3ddfea626cc8db05a",
+      "sourceCommit": "a6f825bb62816ca95ab3676fdf5a68582f272faa",
       "sourcePath": "luci-app-store",
       "latest": {
         "name": "luci-app-store",
@@ -82,13 +82,13 @@
         ],
         "license": "",
         "installedSize": 364826,
-        "fileSize": 116405,
-        "sha256": "be13d66773a14eab2b89d41a022b08dc4acdc32d8494ce0cb3dea310b856c45d",
+        "fileSize": 116411,
+        "sha256": "ddb33f745dc953c73ae5418f33e6fd0309f0d3dea412be1ced4839c9303aef44",
         "sourceRepo": "kiddin9/op-packages",
-        "sourceCommit": "9200392417affa79f23eb0e3ddfea626cc8db05a",
+        "sourceCommit": "a6f825bb62816ca95ab3676fdf5a68582f272faa",
         "sourcePath": "luci-app-store",
         "asset": "luci-app-store-0.2.1-r1.apk",
-        "publishedAt": "2026-11-26T12:45:50.622Z"
+        "publishedAt": "2026-11-26T19:07:52.074Z"
       },
       "previous": null,
       "versions": [
@@ -108,13 +108,13 @@
           ],
           "license": "",
           "installedSize": 364826,
-          "fileSize": 116405,
-          "sha256": "be13d66773a14eab2b89d41a022b08dc4acdc32d8494ce0cb3dea310b856c45d",
+          "fileSize": 116411,
+          "sha256": "ddb33f745dc953c73ae5418f33e6fd0309f0d3dea412be1ced4839c9303aef44",
           "sourceRepo": "kiddin9/op-packages",
-          "sourceCommit": "9200392417affa79f23eb0e3ddfea626cc8db05a",
+          "sourceCommit": "a6f825bb62816ca95ab3676fdf5a68582f272faa",
           "sourcePath": "luci-app-store",
           "asset": "luci-app-store-0.2.1-r1.apk",
-          "publishedAt": "2026-11-26T12:45:50.622Z"
+          "publishedAt": "2026-11-26T19:07:52.074Z"
         }
       ]
     },
@@ -123,7 +123,7 @@
       "description": "Native OpenWrt / ImmortalWrt LuCI application for managing airport subscriptions, parsing proxy nodes, filtering, deduplicating, merging and generating client subscription configs. Sub-Store like experience, without Docker or external services.",
       "license": "",
       "sourceRepo": "kiddin9/op-packages",
-      "sourceCommit": "9200392417affa79f23eb0e3ddfea626cc8db05a",
+      "sourceCommit": "a6f825bb62816ca95ab3676fdf5a68582f272faa",
       "sourcePath": "luci-app-substore",
       "latest": {
         "name": "luci-app-substore",
@@ -137,13 +137,13 @@
         ],
         "license": "",
         "installedSize": 463423,
-        "fileSize": 144547,
-        "sha256": "29da06f709ea9585d3973e90311e0d99c5926cebe502c05f2e49ff496492c4e6",
+        "fileSize": 144553,
+        "sha256": "4d757b6b55d157f8c95c3ec65d9518656352048119aac363117dd4a74af0f1a2",
         "sourceRepo": "kiddin9/op-packages",
-        "sourceCommit": "9200392417affa79f23eb0e3ddfea626cc8db05a",
+        "sourceCommit": "a6f825bb62816ca95ab3676fdf5a68582f272faa",
         "sourcePath": "luci-app-substore",
         "asset": "luci-app-substore-2.7.3-r25.apk",
-        "publishedAt": "2026-11-26T12:45:50.629Z"
+        "publishedAt": "2026-11-26T19:07:52.082Z"
       },
       "previous": null,
       "versions": [
@@ -159,13 +159,13 @@
           ],
           "license": "",
           "installedSize": 463423,
-          "fileSize": 144547,
-          "sha256": "29da06f709ea9585d3973e90311e0d99c5926cebe502c05f2e49ff496492c4e6",
+          "fileSize": 144553,
+          "sha256": "4d757b6b55d157f8c95c3ec65d9518656352048119aac363117dd4a74af0f1a2",
           "sourceRepo": "kiddin9/op-packages",
-          "sourceCommit": "9200392417affa79f23eb0e3ddfea626cc8db05a",
+          "sourceCommit": "a6f825bb62816ca95ab3676fdf5a68582f272faa",
           "sourcePath": "luci-app-substore",
           "asset": "luci-app-substore-2.7.3-r25.apk",
-          "publishedAt": "2026-11-26T12:45:50.629Z"
+          "publishedAt": "2026-11-26T19:07:52.082Z"
         }
       ]
     },
@@ -174,7 +174,7 @@
       "description": "Task library",
       "license": "",
       "sourceRepo": "kiddin9/op-packages",
-      "sourceCommit": "9200392417affa79f23eb0e3ddfea626cc8db05a",
+      "sourceCommit": "a6f825bb62816ca95ab3676fdf5a68582f272faa",
       "sourcePath": "luci-lib-taskd",
       "latest": {
         "name": "luci-lib-taskd",
@@ -190,12 +190,12 @@
         "license": "",
         "installedSize": 18688,
         "fileSize": 7494,
-        "sha256": "c0c127caae92470be7dda8faad895e1b8ba041237b608dd84b64c6f62827d70f",
+        "sha256": "1302cd8ea56f1cfdc67b2fe427665078e4ca842ff000c5d0ac47155629a40355",
         "sourceRepo": "kiddin9/op-packages",
-        "sourceCommit": "9200392417affa79f23eb0e3ddfea626cc8db05a",
+        "sourceCommit": "a6f825bb62816ca95ab3676fdf5a68582f272faa",
         "sourcePath": "luci-lib-taskd",
         "asset": "luci-lib-taskd-1.0.26-r2.apk",
-        "publishedAt": "2026-11-26T12:45:50.616Z"
+        "publishedAt": "2026-11-26T19:07:52.068Z"
       },
       "previous": null,
       "versions": [
@@ -213,12 +213,12 @@
           "license": "",
           "installedSize": 18688,
           "fileSize": 7494,
-          "sha256": "c0c127caae92470be7dda8faad895e1b8ba041237b608dd84b64c6f62827d70f",
+          "sha256": "1302cd8ea56f1cfdc67b2fe427665078e4ca842ff000c5d0ac47155629a40355",
           "sourceRepo": "kiddin9/op-packages",
-          "sourceCommit": "9200392417affa79f23eb0e3ddfea626cc8db05a",
+          "sourceCommit": "a6f825bb62816ca95ab3676fdf5a68582f272faa",
           "sourcePath": "luci-lib-taskd",
           "asset": "luci-lib-taskd-1.0.26-r2.apk",
-          "publishedAt": "2026-11-26T12:45:50.616Z"
+          "publishedAt": "2026-11-26T19:07:52.068Z"
         }
       ]
     },
@@ -227,7 +227,7 @@
       "description": "Xterm.js library",
       "license": "MIT",
       "sourceRepo": "kiddin9/op-packages",
-      "sourceCommit": "9200392417affa79f23eb0e3ddfea626cc8db05a",
+      "sourceCommit": "a6f825bb62816ca95ab3676fdf5a68582f272faa",
       "sourcePath": "luci-lib-xterm",
       "latest": {
         "name": "luci-lib-xterm",
@@ -240,13 +240,13 @@
         ],
         "license": "MIT",
         "installedSize": 355191,
-        "fileSize": 79103,
-        "sha256": "1ca80b349cbc492171279c24dea24e4abe6f37c1c9e3de46cff066a747119c47",
+        "fileSize": 79096,
+        "sha256": "10f34cc6f6d993f240ef723fbd709784923baa199d658d67353ed350df3fee4d",
         "sourceRepo": "kiddin9/op-packages",
-        "sourceCommit": "9200392417affa79f23eb0e3ddfea626cc8db05a",
+        "sourceCommit": "a6f825bb62816ca95ab3676fdf5a68582f272faa",
         "sourcePath": "luci-lib-xterm",
         "asset": "luci-lib-xterm-4.18.0-r1.apk",
-        "publishedAt": "2026-11-26T12:45:50.603Z"
+        "publishedAt": "2026-11-26T19:07:52.049Z"
       },
       "previous": null,
       "versions": [
@@ -261,13 +261,13 @@
           ],
           "license": "MIT",
           "installedSize": 355191,
-          "fileSize": 79103,
-          "sha256": "1ca80b349cbc492171279c24dea24e4abe6f37c1c9e3de46cff066a747119c47",
+          "fileSize": 79096,
+          "sha256": "10f34cc6f6d993f240ef723fbd709784923baa199d658d67353ed350df3fee4d",
           "sourceRepo": "kiddin9/op-packages",
-          "sourceCommit": "9200392417affa79f23eb0e3ddfea626cc8db05a",
+          "sourceCommit": "a6f825bb62816ca95ab3676fdf5a68582f272faa",
           "sourcePath": "luci-lib-xterm",
           "asset": "luci-lib-xterm-4.18.0-r1.apk",
-          "publishedAt": "2026-11-26T12:45:50.603Z"
+          "publishedAt": "2026-11-26T19:07:52.049Z"
         }
       ]
     },
@@ -276,7 +276,7 @@
       "description": "Simple Task Manager based on procd",
       "license": "",
       "sourceRepo": "kiddin9/op-packages",
-      "sourceCommit": "9200392417affa79f23eb0e3ddfea626cc8db05a",
+      "sourceCommit": "a6f825bb62816ca95ab3676fdf5a68582f272faa",
       "sourcePath": "taskd",
       "latest": {
         "name": "taskd",
@@ -292,13 +292,13 @@
         ],
         "license": "",
         "installedSize": 4361,
-        "fileSize": 2333,
-        "sha256": "37b6cdceae2736a960c117ea25f5cbba980592914b3ad35fda98a168f5dec657",
+        "fileSize": 2330,
+        "sha256": "dd1d3daa2db82768e901b2df10b65581640e3ad1a72bd5d04127eb9dac125440",
         "sourceRepo": "kiddin9/op-packages",
-        "sourceCommit": "9200392417affa79f23eb0e3ddfea626cc8db05a",
+        "sourceCommit": "a6f825bb62816ca95ab3676fdf5a68582f272faa",
         "sourcePath": "taskd",
         "asset": "taskd-1.0.3-r1.apk",
-        "publishedAt": "2026-11-26T12:45:50.612Z"
+        "publishedAt": "2026-11-26T19:07:52.063Z"
       },
       "previous": null,
       "versions": [
@@ -316,13 +316,13 @@
           ],
           "license": "",
           "installedSize": 4361,
-          "fileSize": 2333,
-          "sha256": "37b6cdceae2736a960c117ea25f5cbba980592914b3ad35fda98a168f5dec657",
+          "fileSize": 2330,
+          "sha256": "dd1d3daa2db82768e901b2df10b65581640e3ad1a72bd5d04127eb9dac125440",
           "sourceRepo": "kiddin9/op-packages",
-          "sourceCommit": "9200392417affa79f23eb0e3ddfea626cc8db05a",
+          "sourceCommit": "a6f825bb62816ca95ab3676fdf5a68582f272faa",
           "sourcePath": "taskd",
           "asset": "taskd-1.0.3-r1.apk",
-          "publishedAt": "2026-11-26T12:45:50.612Z"
+          "publishedAt": "2026-11-26T19:07:52.063Z"
         }
       ]
     }
