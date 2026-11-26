@@ -387,6 +387,13 @@ jobs:
             # Separate audit record: the extension pin never overwrites the
             # supplement record the site auto-adopts.
             audit_out="extension-$PUBLISH_MODE.json"
+          elif [ "$PUBLISH_MODE" = "staging" ]; then
+            # A staging record must never overwrite publish.json. The site reads
+            # publish.json as the live audit and requires channel=live there;
+            # writing staging into it both hid the staged build from the site
+            # and clobbered the live audit (found 2026-11-26: eleven staging
+            # publishes in a row, all reported as publish_pending).
+            audit_out="staging.json"
           fi
           node scripts/write-audit.mjs \
             --site site \
@@ -442,10 +449,10 @@ jobs:
 
   deploy:
     needs: build
-    # A staging run deliberately leaves the live pointer and the served site
-    # alone, so the "live pointer is served and signed" assertion cannot hold
-    # there; the staged index inside the artifact is the deliverable instead.
-    if: needs.build.outputs.publish_mode == 'live'
+    # Staging runs deploy too: staging.json is served from Pages, and the site
+    # can only see a staged build (and offer to promote it) when that file is
+    # actually reachable. publish-site.mjs leaves the live pointer untouched for
+    # channel=staging, so this does not move the live feed.
     runs-on: ubuntu-latest
     environment:
       name: github-pages
@@ -459,6 +466,9 @@ jobs:
       # <live>/supplement/<base>/<target>/packages.adb still answered 404 on
       # the Pages site (the deploy had been gated by the environment rules).
       - name: Assert the live version-frozen pointer is served and signed
+        # Only a live publish moves the pointer; a staging deploy has nothing to
+        # assert against the live channel.
+        if: needs.build.outputs.publish_mode == 'live'
         env:
           FEED_PATH: ${{ needs.build.outputs.frozen_path }}
         run: |
